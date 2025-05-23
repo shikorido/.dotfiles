@@ -1,0 +1,2 @@
+# Ignore .master_root file that should exist and point to master branch to be able to source utils.sh
+.master_root
