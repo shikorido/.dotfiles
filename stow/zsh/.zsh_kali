@@ -1,0 +1,2 @@
+[ -S /tmp/pulse-socket ] && export PULSE_SERVER=/tmp/pulse-socket
+
