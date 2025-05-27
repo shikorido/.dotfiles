@@ -1,0 +1,9 @@
+* text=auto eol=lf
+
+# Optionally:
+*.bat text eol=crlf
+*.cmd text eol=crlf
+#*.ps1 text eol=lf
+#*.sh text eol=lf
+#*.conf text eol=lf
+
