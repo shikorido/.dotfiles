@@ -1,0 +1,320 @@
+#!/usr/bin/env zsh
+
+# Takes list of variables, checks whether it should convert VARNAME path (list of paths),
+# backups original contents to a _WINDOWSPATH_VARNAME variable,
+# converts VARNAME path (list of paths) to unix and overwrites VARNAME contents with.
+# Helpful for path operations when variables should stay in windows style.
+# (from_unix_if_msys2 must be invoked manually, the implementation does not provide stack behaviour).
+#
+# Cygpath tool translates backslashes to forward slashes, removes ':' after drive name,
+# lowercases drive name, prepends forward slash.
+# Converting every env variable that contains path (list of paths separated by ';') to unix
+# is dangerous and harmful (especially when using mingw, clang, ucrt which are windows-based).
+# I hadn't tried to build Android apps using sdk/ndk for windows with unix paths yet.
+# Something telling me that ANDROID_HOME, ANDROID_NDK_HOME and other checks would fail.
+# So my best bet is to use unix paths under PATH only (msys2 layer tools should
+# convert paths to windows when needed).
+#LF='
+#'
+# or
+#LF=`printf '\n@'`
+#LF=${LF%@}
+to_unix_if_msys2() {
+	! [ -e ~/.zsh_msys2 ] && return
+	for var in "$@"; do
+		# If var is undefined.
+		[ -z "`eval printf %s \\"'$'$var\\"`" ] && continue
+		# If already converted.
+		[ -n "`eval printf %s \\"'$'_WINDOWS_$var\\"`" ] && continue  #echo
+		case `eval printf %s \"'$'$var\"` in
+			# Process only fully qualified paths.
+			[A-Za-z]':'*'\'*) ;;
+			*) continue
+		esac
+		# To understand what is going on look under $DOTFILES/linux/tests folder.
+		eval _WINDOWS_$var=\`cygpath -w \"'$'$var\"\`
+		case `eval printf %s \"'$'$var\"` in
+			*';'*)
+				#IFS_OLD=$IFS; IFS=$LF
+				#set -- `eval printf %s \"'$'$var\" | tr ';' '\n'`
+				IFS_OLD=$IFS; IFS=';'
+				set -- `eval printf %s \"'$'$var\"`
+				IFS=$IFS_OLD; unset IFS_OLD
+				eval $var=
+				for entry in "$@"; do
+					if [ -z "`eval printf %s \\"'$'$var\\"`" ]; then
+						eval $var=\`cygpath -u \"$entry\"\`
+					else
+						eval $var='$'$var:\`cygpath -u \"$entry\"\`
+					fi
+				done
+				#IFS=$IFS_OLD; unset IFS_OLD
+				;;
+			*)
+				eval $var=\`cygpath -u \"'$'$var\"\`
+				;;
+		esac
+	done
+}
+from_unix_if_msys2() {
+	! [ -e ~/.zsh_msys2 ] && return
+	for var in "$@"; do
+		[ -z "`eval printf %s \\"'$'_WINDOWS_$var\\"`" ] && continue  #echo "Not yet converted $var" >&2 && continue
+		#eval $var=\`cygpath -w '$'"$var"\`
+		eval $var=\`cygpath -w \"'$'_WINDOWS_$var\"\`
+		eval unset _WINDOWS_$var
+	done
+}
+
+#if [ -f ~/.zsh_msys2 ]; then
+msys2_root=C:\\msys64
+msys2_root_map() {
+	[ -z "$msys2_root" ] && return 1
+	# Direct root mapping
+	case $1 in
+		/bin)
+			printf %s "$msys2_root\\bin" ;;
+		/clang64)
+			printf %s "$msys2_root\\clang64" ;;
+		/clangarm64)
+			printf %s "$msys2_root\\clangarm64" ;;
+		/dev)
+			printf %s "$msys2_root\\dev" ;;
+		/etc)
+			printf %s "$msys2_root\\etc" ;;
+		/home)
+			printf %s "$msys2_root\\home" ;;
+		/installerResources)
+			printf %s "$msys2_root\\installerResources" ;;
+		/mingw32)
+			printf %s "$msys2_root\\mingw32" ;;
+		/mingw64)
+			printf %s "$msys2_root\\mingw64" ;;
+		/opt)
+			printf %s "$msys2_root\\opt" ;;
+		/proc)
+			printf %s "$msys2_root\\proc" ;;
+		/tmp)
+			printf %s "$msys2_root\\tmp" ;;
+		/ucrt64)
+			printf %s "$msys2_root\\ucrt64" ;;
+		/usr)
+			printf %s "$msys2_root\\usr" ;;
+		/var)
+			printf %s "$msys2_root\\var" ;;
+		*)
+			return 1 ;;
+	esac
+}
+
+# msys2 to windows actually.
+# $1 - posix_path
+posix_to_windows() (
+	posix_path=$1
+	# Sanity checks
+	[ "$_MSYS2_" = 0 ] || [ -z "$posix_path" ] || [ -z "$msys2_root" ] && printf %s "$posix_path" && exit 0
+
+	prefix_changed=0
+
+	# If path has no leading '/' - assume that prefix does not need to be changed.
+	[ -n "${posix_path%%/*}" ] && prefix_changed=1
+
+	# Not a case in WezTerm config.
+	# For edgy-ephemeral cases when vim.fn.expand() eats posix-style path.
+	# In that case we get backslashes everywhere which we don't need
+	# when working with libuv which uses WinAPI under the hood.
+	# E.g. vim.fn.expand("/home/User") gives "\home\User".
+	#posix_path = posix_path:gsub("\\", "/")
+
+	# Another one edgy-ephemeral case when we have only "/".
+	[ "$prefix_changed" -eq 0 ] && case $posix_path in
+		/)
+			#wezwarn("Only '/' case: " .. posix_path)
+			posix_path=`printf %s "$msys2_root"`
+			prefix_changed=1 ;;
+	esac
+
+	# Apply root folder mappings only if path starts with "/" and has at least 3 chars after
+	[ "$prefix_changed" -eq 0 ] && case $posix_path in
+		/[A-Za-z][A-Za-z][A-Za-z])
+			#wezwarn("msys2 root mapping case: " .. posix_path)
+			__=`msys2_root_map "$posix_path"`
+			[ $? -eq 0 ] && posix_path=$__ && unset __ && prefix_changed=1 ;;
+	esac
+
+	# Drive letter paths /c/Users -> C:\\Users (+edge case on fast pane split in WezTerm /C:/Users -> C:\\Users).
+	# It is possible to have only "/c" (w/o trailing "/") but not "/C:" (WezTerm internally trails it with "/").
+	# Idk if WezTerm paths behaviour leaks to msys2 actually cause even in regular cmd.exe/powershell.exe it uses
+	# "/<DRIVE>:/" notation internally for panes.
+	if [ "$prefix_changed" -eq 0 ]; then
+		case $posix_path in
+			/[A-Za-z])
+				#wezwarn("Only '/[A-Za-z]' case: " .. posix_path)
+				posix_path=`printf %s "${posix_path#/}:\\\\"`
+				prefix_changed=1 ;;
+			/[A-Za-z]/*)
+				#wezwarn("'^/[A-Za-z]/' case: " .. posix_path)
+				posix_path=`printf %s "$posix_path" | sed "s#^/\([A-Za-z]\)#\1:#"`
+				prefix_changed=1 ;;
+			/[A-Za-z]:/*)
+				#wezwarn("'^/[A-Za-z]:/' case: " .. posix_path)
+				posix_path=`printf %s "${posix_path#/}"`
+				prefix_changed=1 ;;
+			*)
+				# The code path can be taken only in specific cases
+				# like a custom folder under msys2 root (/abc).
+				#wezwarn("General mapping case for given path: " .. posix_path)
+				posix_path=`printf %s "$msys2_root\\\\${posix_path#/}"`
+				prefix_changed=1 ;;
+		esac
+	fi
+
+	# Lets try to use posix-style paths for testing.
+	#posix_path = posix_path:gsub("^/([A-Za-z]):?([^0-9A-Za-z_-]?)", "/%1%2")
+
+	# Replace remaining forward slashes with backslashes.
+	posix_path=`printf %s "$posix_path" | tr '/' '\\\\'`
+
+	# For bash.exe (nvim shell) it is better to use forward slashes
+	# cause backslashes must to be escaped. Need to come up with something
+	# cause nvim for windows (even clang64 binary) prefers windows-style paths (but works with forward slashes as well?).
+	# UPD. "set shellslash" makes the trick by converting backslashes to forward slashes in shell invocations.
+	#posix_path = posix_path:gsub("\\", "/")
+
+	# Drive letter to upper case
+	case $posix_path in
+		[a-z]*)
+			posix_path=`printf %s "${posix_path%%:*}" | tr '[:lower:]' '[:upper:]'`:`printf %s "${posix_path#*:}"`
+			# https://stackoverflow.com/questions/4569825/sed-one-liner-to-convert-all-uppercase-to-lowercase
+			# 1. Some systems have no preinstalled perl (android).
+			# 2. awk's toupper(), tolower() are extensions.
+			# 3. sed's \U, \L are GNU extensions.
+			# 4. tr is most portable but lacks UTF-8 support and operates only on ASCII character set.
+			# In my case I want to uppercase only first letter.
+			# It is simple to accomplish with variable expansions and mark like @.
+			#posix_path=`printf %s "$posix_path" | sed "s#^\([a-z]\)#\1@#"`
+			#posix_path=`printf %s "${posix_path%%@*}" | tr '[:lower:]' '[:upper:]'`${posix_path#*@} ;;
+	esac
+
+	#wezwarn("posix_to_windows will return " .. posix_path)
+
+	printf "%s\n" "$posix_path"
+)
+#fi  # [ -f ~/.zsh_msys2 ]
+
+# Automatically deduced in install.sh and uninstall.sh
+#export STOW_FOLDERS="alacritty,bin,i3,nvim,personal,tmux,zsh"
+
+change_background() {
+    # Sanity check
+    ! [ -d "$DOTFILES/assets/backgrounds" ] && echo "$DOTFILES/assets/backgrounds is not a directory or does not exist." && return
+
+    # POSIX-compliant even for $() command substitutions (in case of dirty spaces usage)
+    local bg=$DOTFILES/assets/backgrounds/$(ls "$DOTFILES/assets/backgrounds" | fzf)
+
+    # Mate
+    #dconf write /org/mate/desktop/background/picture-filename "'$DOTFILES/backgrounds/$(ls $DOTFILES/backgrounds | fzf)'"
+
+    # Gnome
+    gsettings set org.gnome.desktop.background picture-uri "$bg"
+    gsettings set org.gnome.desktop.background picture-uri-dark "$bg"
+}
+
+addToPath() {
+    # Sanity check
+    [ -d "$1" ] || return
+
+    # First condition will choke on preceding matching
+    # f.e. if /mnt/c exists in path, /c will match against *"$1:"* if the following rest is equal
+    #if ! [[ "$PATH" == *"$1:"* || "$PATH" == *":$1" ]]; then
+    # OR
+    if [[ :$PATH: != *:$1:* ]]; then
+        #echo Adding to path back
+        export PATH=$PATH:$1
+    fi
+
+    # Original
+    #if [[ $PATH != *$1* ]]; then
+    #    export PATH=$PATH:$1
+    #fi
+
+    # Delete occurance of path in PATH and insert it to the front
+    # as the function name suggests...
+    # But how?
+    #myCheck() {
+    #    paths=(${PATH//:/ })
+    #    #echo $paths
+    #    for i in ${paths[@]}; do
+    #        echo $i 123123
+    #        #echo ${paths[i]}
+    #        #if [[ "${paths[i]}" == "$1" ]]; then
+    #        #    unset paths[i]
+    #        #fi;
+    #    done;
+    #    #echo $paths
+    #}
+
+    #PATH="$(
+    #    bash --norc -ec '
+    #        IFS=:;
+    #        paths=($PATH);
+    #        for i in ${!paths[@]}; do
+    #        	if [[ ${paths[i]} == "''$1''" ]]; then
+    #        	    unset '\''paths[i]'\'';
+    #        	fi;
+    #        done;
+    #        echo "${paths[*]}"')"
+    #echo $PATH
+    #export PATH=$1:$PATH
+}
+
+addToPathFront() {
+    # Sanity check
+    [ -d "$1" ] || return
+
+    if ! [[ :$PATH: == *:$1:* ]]; then
+        #echo Adding to path front
+        export PATH=$1:$PATH
+    fi
+}
+
+#run-shell() {
+#    if [ -n "$SHELL" ]; then
+#        if [ -n "$1" ]; then
+#            "$SHELL" "$1"
+#        fi
+#    fi
+#}
+
+
+
+# Super cool keyboard stuffs.
+# Required for x applications.
+#setxkbmap -option caps:ctrl_modifier
+
+#startMongo() {
+#    sudo systemctl start mongod
+#    sudo systemctl enable mongod
+#}
+
+#increaseWatchers() {
+#    sudo sysctl fs.inotify.max_user_watchers=65536
+#    sudo sysctl -p
+#}
+
+#die() {
+#    echo >&2 "$@"
+#    exit 1
+#}
+
+#commitDotFiles() {
+#    pushd $DOTFILES
+#    pushd personal
+#    git add .
+#    git push origin master
+#    popd
+#    git add .
+#    git push origin master
+#    popd
+#}
+

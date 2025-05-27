@@ -1,0 +1,42 @@
+#!/usr/bin/env sh
+
+# Only for hadoop user
+if [ "`id -un`" = hadoop ]; then
+    # Sanity check
+    ! [ -d /opt/hadoop ] && echo "/opt/hadoop is not a directory or does not exist." && return
+
+    export JAVA_HOME=/usr/lib/jvm/amazon-corretto-8.432
+    #export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+    export HADOOP_HOME=~
+    export HADOOP_MODULES=$HADOOP_HOME/share/hadoop
+    #export PATH=$PATH:$HADOOP_HOME/bin
+    addToPathFront "$HADOOP_HOME/bin"
+    addToPathFront "$HADOOP_HOME/sbin"
+    export HDMRJ=$HADOOP_MODULES/mapreduce
+    export HDCMJ=$HADOOP_MODULES/common
+    export HDFSJ=$HADOOP_MODULES/hdfs
+    export YARNJ=$HADOOP_MODULES/yarn
+    #addToPathFront $HADOOP_MODULES/mapreduce
+    #addToPathFront $HADOOP_MODULES/common
+    #addToPathFront $HADOOP_MODULES/hdfs
+    #addToPathFront $HADOOP_MODULES/yarn
+    export HADOOP_MAPRED_HOME=$HADOOP_HOME
+    export HADOOP_COMMON_HOME=$HADOOP_HOME
+    export HADOOP_HDFS_HOME=$HADOOP_HOME
+    export YARN_HOME=$HADOOP_HOME
+    export HADOOP_COMMON_LIB_NATIVE_DIR=$HADOOP_HOME/lib/native
+    #export HADOOP_OPTS=-Djava.library.path=$HADOOP_HOME/lib
+    export HADOOP_OPTS=-Djava.library.path=$HADOOP_COMMON_LIB_NATIVE_DIR
+
+    # Aliases
+    #unalias fs 2>/dev/null
+    alias fs='hadoop fs'
+    #unalias hls 2>/dev/null
+    alias hls='fs -ls'
+
+    # In case if LZO compression enabled in hadoop cluster
+    lzohead() {
+        hadoop fs -cat $1 | lzop -dc | head -1000 | less
+    }
+fi
+

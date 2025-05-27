@@ -1,0 +1,5 @@
+[submodule "stow_submodule/oh-my-zsh/.oh-my-zsh"]
+	path = stow_submodule/oh-my-zsh/.oh-my-zsh
+	url = https://github.com/ohmyzsh/ohmyzsh.git
+	branch = master
+	ignore = all
