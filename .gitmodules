@@ -1,0 +1,8 @@
+[submodule "stow_submodule/oh-my-zsh/.oh-my-zsh"]
+	path = stow_submodule/oh-my-zsh/.oh-my-zsh
+	url = https://github.com/ohmyzsh/ohmyzsh.git
+	branch = master
+[submodule "stow_submodule/fzf/.fzf"]
+	path = stow_submodule/fzf/.fzf
+	url = https://github.com/junegunn/fzf.git
+	branch = master

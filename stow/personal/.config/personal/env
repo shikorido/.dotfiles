@@ -1,0 +1,116 @@
+#!/usr/bin/env bash
+
+# Super cool keyboard stuffs.
+# Require for x applications
+#setxkbmap -option caps:ctrl_modifier
+
+# Automatically deduced in install.sh and uninstall.sh
+#export STOW_FOLDERS="alacritty,bin,i3,nvim,personal,tmux,zsh"
+
+#run-shell() {
+#    if [ -n $SHELL ]; then
+#        if [ -n $1 ]; then
+#            $SHELL $1
+#        fi
+#    fi
+#}
+
+#startMongo() {
+#    sudo systemctl start mongod
+#    sudo systemctl enable mogod
+#}
+
+#increaseWatchers() {
+#    sudo sysctl fs.inotify.max_user_watchers=65536
+#    sudo sysctl -p
+#}
+
+change_background() {
+    # Sanity check
+    ! [ -d "$DOTFILES/assets/backgrounds" ] && echo "$DOTFILES/assets/backgrounds is not a directory or does not exist." && return
+
+    # POSIX-compliant even for $() command substitutions (in case of dirty spaces usage)
+    local bg=$DOTFILES/assets/backgrounds/$(ls "$DOTFILES/assets/backgrounds" | fzf)
+
+    # Mate
+    #dconf write /org/mate/desktop/background/picture-filename "'$DOTFILES/backgrounds/$(ls $DOTFILES/backgrounds | fzf)'"
+
+    # Gnome
+    gsettings set org.gnome.desktop.background picture-uri "$bg"
+    gsettings set org.gnome.desktop.background picture-uri-dark "$bg"
+}
+
+#die() {
+#    echo >&2 "$@"
+#    exit 1
+#}
+
+addToPath() {
+    # Sanity check
+    [ -d "$1" ] || return
+
+    # First condition will choke on preceding matching
+    # f.e. if /mnt/c exists in path, /c will match against *"$1:"* if the following rest is equal
+    #if ! [[ "$PATH" == *"$1:"* || "$PATH" == *":$1" ]]; then
+    # OR
+    if [[ :$PATH: != *:$1:* ]]; then
+        #echo Adding to path back
+        export PATH=$PATH:$1
+    fi
+
+    # Original
+    #if [[ $PATH != *$1* ]]; then
+    #    export PATH=$PATH:$1
+    #fi
+
+    # Delete occurance of path in PATH and insert it to the front
+    # as the function name suggests...
+    # But how?
+    #myCheck() {
+    #    paths=(${PATH//:/ })
+    #    #echo $paths
+    #    for i in ${paths[@]}; do
+    #        echo $i 123123
+    #        #echo ${paths[i]}
+    #        #if [[ "${paths[i]}" == "$1" ]]; then
+    #        #    unset paths[i]
+    #        #fi;
+    #    done;
+    #    #echo $paths
+    #}
+
+    #PATH="$(
+    #    bash --norc -ec '
+    #        IFS=:;
+    #        paths=($PATH);
+    #        for i in ${!paths[@]}; do
+    #        	if [[ ${paths[i]} == "''$1''" ]]; then
+    #        	    unset '\''paths[i]'\'';
+    #        	fi;
+    #        done;
+    #        echo "${paths[*]}"')"
+    #echo $PATH
+    #export PATH=$1:$PATH
+}
+
+addToPathFront() {
+    # Sanity check
+    [ -d "$1" ] || return
+
+    if ! [[ :$PATH: == *:$1:* ]]; then
+        #echo Adding to path front
+        export PATH=$1:$PATH
+    fi
+}
+
+#commitDotFiles() {
+#    pushd $DOTFILES
+#    pushd personal
+#    git add .
+#    git push origin master
+#    popd
+#    git add .
+#    git push origin master
+#    popd
+#}
+
