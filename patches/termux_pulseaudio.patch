@@ -1,0 +1,11 @@
+--- usr/etc/pulse/default.pa	2025-06-21 04:27:03.270000000 +0300
++++ usr/etc/pulse/default.pa	2025-06-21 01:35:58.440000000 +0300
+@@ -56,7 +56,7 @@
+ .ifexists module-esound-protocol-unix.so
+ load-module module-esound-protocol-unix
+ .endif
+-load-module module-native-protocol-unix
++load-module module-native-protocol-unix socket=/data/data/com.termux/files/usr/tmp_persistent/pulse-socket auth-anonymous=yes
+
+ ### Network access (may be configured with paprefs, so leave this commented
+ ### here if you plan to use paprefs)
