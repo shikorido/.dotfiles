@@ -1,0 +1,38 @@
+#!/usr/bin/env sh
+
+# I would prefer ssh signing cause termux has broken gpg.
+return
+
+command -v gpg >/dev/null && {
+    [ -z "`gpg --list-secret-keys 2>/dev/null`" ] && return
+    # Will capture invoked command.
+    #gpg_state=$(ps -ef | grep "^[[:space:]]*`id -un`" | grep "gpg-agent")
+    gpg_state=$(ps -ef | grep "gpg-agent")
+    gpg_state=$(echo "$gpg_state" | grep "^[[:space:]]*`id -un`" | grep "gpg-agent ")
+    if [ -n "$gpg_state" ]; then
+        # gpg-agent is running under current user.
+        if echo "$gpg_state" | grep -q -- --enable-ssh-support; then
+            # gpg-agent supports ssh
+            [ -S ~/.gnupg/S.gpg-agent.ssh ] && export SSH_AUTH_SOCK=~/.gnupg/S.gpg-agent.ssh || echo "Could not find ssh auth sock provided by gpg-agent."
+        else
+            # gpg-agent does not support ssh.
+            echo "gpg-agent is running but without ssh support. Restarting with ssh support..."
+            gpg-connect-agent killagent /bye
+            eval `gpg-agent --enable-ssh-support --daemon`
+        fi
+    else
+        # gpg-agent is not running.
+        eval `gpg-agent --enable-ssh-support --daemon`
+    fi
+
+    # To kill gpg-agent, use
+    # gpgconf --kill gpg-agent
+    # or
+    # gpg-connect-agent killagent /bye
+    # or to reload
+    # gpg-connect-agent reloadagent /bye
+    #
+    # Get help for /bye
+    # gpg-connect-agent help /bye
+}
+

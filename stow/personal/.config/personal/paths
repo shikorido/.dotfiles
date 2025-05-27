@@ -1,0 +1,36 @@
+#!/usr/bin/env sh
+
+addToPathFront ~/.local/bin
+addToPathFront /opt/awg/bin
+addToPathFront /opt/nvim/bin
+addToPathFront /usr/local/bin
+
+#addToPath /usr/lib/ccache
+
+
+
+#addToPathFront ~/.bin
+#addToPathFront ~/.zig
+#addToPathFront ~/.local/.npm-global/bin
+#addToPathFront ~/.local/scripts
+#addToPathFront ~/bin
+#addToPathFront ~/.local/n/bin
+#addToPathFront ~/.local/go/bin
+#addToPathFront ~/go/bin
+#addToPathFront ~/personal/sumneko/bin
+#addToPathFront ~/.deno
+#addToPathFront ~/anaconda/bin
+#addToPathFront /home/theprimeagen/n/bin
+#addToPathFront $DENO_INSTALL
+#addToPath /home/theprimeagen/personal/lua-language-server/bin/Linux
+#addToPath /usr/local/go/bin
+#addToPath $GOPATH/bin
+#addToPath $HOME/work/wrapper
+#addToPath /usr/local/netflix/tvui-automation-analyzer
+#addToPath /usr/local/netflix/encoders/bin
+#addToPath $HOME/.yarn/bin
+#addToPath /usr/lib/llvm-8/bin
+#addToPath $HOME/personal/uhh/buid
+#addToPath $HOME/.cargo/bin
+#addToPath $HOME/.rustup
+
