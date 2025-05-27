@@ -1,0 +1,11 @@
+# Ignore everything under stow_submodule/ (for future use)
+#stow_submodule/*
+
+# UNignore the submodule directories (if any)
+#!stow_submodule/fzf
+#!stow_submodule/fzf/.fzf
+#!stow_submodule/oh-my-zsh
+#!stow_submodule/oh-my-zsh/.oh-my-zsh
+
+# Ignore .master_root file that should exist and point to master branch to be able to source utils.sh
+.master_root

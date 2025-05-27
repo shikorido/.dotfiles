@@ -1,0 +1,32 @@
+alias luamake="/data/data/com.termux/files/home/personal/lsp_builds/lua-language-server/3rd/luamake"
+
+export LUAROCKS_SYSTEM=linux
+# Using TMP along with TMPDIR (second should be set appropriately for root via termux_root.sh).
+export TMP=~/.tmp
+[ -d "$TMP" ] || mkdir -p "$TMP"
+
+#[ -S "$PREFIX/tmp_persistent/pulse-socket" ] && export PULSE_SERVER=$PREFIX/tmp_persistent/pulse-socket
+export PULSE_SERVER=$PREFIX/tmp_persistent/pulse-socket
+[ -d "${PULSE_SERVER%/*}" ] || mkdir -p "${PULSE_SERVER%/*}"
+
+#[ "`id -u`" = 0 ] && {
+#    alias ssh="ssh -o UserKnownHostsFile=$HOME/.ssh/known_hosts -i $HOME/.ssh/id_rsa"
+#}
+
+[ -d ~/notes_frida ] && {
+    # For frida building
+    #addToPathFront $PREFIX/opt/python/3.9.23/bin
+    export PKG_CONFIG_LIBDIR=~/notes_frida/pkgconfig
+    export PKG_CONFIG_PATH=/invalid
+    # Pointless due to ignorance of RUNPATH which breaks almost every binary that relies on RUNPATH.
+    # Instead, it is much better to invent mini_sysroot-rpath similar to -ftermux-rpath.
+    #export LD_LIBRARY_PATH=~/opt/mini_sysroots/arm64/usr/lib
+    #addToPathFront ~/opt/python/3.9.23/bin
+    addToPathFront ~/opt/mini_sysroots/arm64/usr/bin
+    addToPathFront ~/notes_frida/bin_wrappers
+
+    #export CCACHE_DEBUG=1
+    #export CCACHE_LOGFILE=~/ccache.log
+    unset CCACHE_DEBUG CCACHE_LOGFILE
+}
+
