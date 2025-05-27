@@ -1,0 +1,19 @@
+#!/usr/bin/env sh
+
+show_git_obj() {
+	set -- "`git rev-parse --revs-only "$1"`"
+	[ -z "$1" ] && echo "show_git_obj: Unknown revision hash provided." && return 1
+	#git cat-file -t "$1"
+	#git cat-file -s "$1"
+	#git cat-file -p "$1"
+	printf "Showing output from \`git cat-file -p \"%s\"\`:\n---OUTPUT-BEGIN---\n%s\n---OUTPUT-END---\n\n" "$1" "`git cat-file -p "$1"`"
+	#printf "%*s\n" 80 "" | tr ' ' '-'
+	# Do you know what real madness is? (I know about $() existence btw).
+	if [ -f ~/.zsh_msys2 ]; then
+		printf "%s\n" "`python -c "\`echo 'from hashlib import sha1, sha256\nimport zlib\nlf="\\\\\\\\n"\nobj_hash="'"$1"'"\nwith open("'"\\\`posix_to_windows "\\\\\\\`readlink -f "\\\\\\\\\\\\\\\`git rev-parse --git-common-dir\\\\\\\\\\\\\\\`"\\\\\\\`" | tr '\\\\\\\\\\\\\\\\' '/'\\\`"'/objects/"+obj_hash[0:2]+"/"+obj_hash[2:],"br") as f:\n\tdec_bin = zlib.decompress(f.read())\nprint("Decompressed " + obj_hash + " git object bytes: ", "---BYTES-BEGIN---", dec_bin, "---BYTES-END---", sep=lf, end=lf)\nprint("Computed sha1 and sha256 hashes from decompressed bytes: ", "sha1:   " + sha1(dec_bin).digest().hex(), "sha256: " + sha256(dec_bin).digest().hex(), sep=lf, end=lf)'\`"`"
+		#printf "%s\n" "`printf %s "\`echo 'from hashlib import sha1, sha256\nimport zlib\nlf="\\\\\\\\n"\nobj_hash="'"$1"'"\nwith open("'"\\\`posix_to_windows "\\\\\\\`readlink -f "\\\\\\\\\\\\\\\`git rev-parse --git-common-dir\\\\\\\\\\\\\\\`"\\\\\\\`" | tr '\\\\\\\\\\\\\\\\' '/'\\\`"'/objects/"+obj_hash[0:2]+"/"+obj_hash[2:],"br") as f:\n\tdec_bin = zlib.decompress(f.read())\nprint("Decompressed " + obj_hash + " git object bytes: ", "---BYTES-BEGIN---", dec_bin, "---BYTES-END---", sep=lf, end=lf)\nprint("Computed sha1 and sha256 hashes from decompressed bytes: ", "sha1:   " + sha1(dec_bin).digest().hex(), "sha256: " + sha256(dec_bin).digest().hex(), sep=lf, end=lf)'\`"`"
+	else
+		printf "%s\n" "`python -c "\`echo 'from hashlib import sha1, sha256\nimport zlib\nlf="\\\\\\\\n"\nobj_hash="'"$1"'"\nwith open("'"\\\`readlink -f "\\\\\\\`git rev-parse --git-common-dir\\\\\\\`"\\\`"'/objects/"+obj_hash[0:2]+"/"+obj_hash[2:],"br") as f:\n\tdec_bin = zlib.decompress(f.read())\nprint("Decompressed " + obj_hash + " git object bytes: ", "---BYTES-BEGIN---", dec_bin, "---BYTES-END---", sep=lf, end=lf)\nprint("Computed sha1 and sha256 hashes from decompressed bytes: ", "sha1:   " + sha1(dec_bin).digest().hex(), "sha256: " + sha256(dec_bin).digest().hex(), sep=lf, end=lf)'\`"`"
+	fi
+}
+

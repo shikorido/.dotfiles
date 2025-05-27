@@ -1,0 +1,124 @@
+export DOTFILES=~/.dotfiles
+
+export XDG_CACHE_HOME=~/.cache
+export XDG_CONFIG_HOME=~/.config
+export XDG_DATA_HOME=~/.local/share
+export XDG_STATE_HOME=~/.local/state
+
+VIM=nvim
+
+PERSONAL=$XDG_CONFIG_HOME/personal
+. "$PERSONAL/env"
+for i in `find -L "$PERSONAL" -mindepth 1 -maxdepth 1 ! -name env`; do
+	#[ "${i##*/}" = chpwdhook ] && ! [ -f ~/.zsh_msys2 ] && continue
+	#echo sourcing $i
+	. "$i"
+done
+[ -s ~/.zsh_kali ] && . ~/.zsh_kali
+[ -s ~/.zsh_msys2 ] && . ~/.zsh_msys2
+[ -s ~/.zsh_termux ] && . ~/.zsh_termux
+#. /usr/share/doc/fzf/examples/key-bindings.zsh
+#. /usr/share/doc/fzf/examples/completion.zsh
+
+[ -s ~/.cargo/env ] && . ~/.cargo/env
+
+alias ll='ls -al'
+alias la='ls -a'
+alias l='ls -CF'
+
+# Where should I put you?
+[ -f ~/.tmux.conf ] && bindkey -s ^f "tmux-sessionizer\n"
+
+# Get lines slice for a range inclusive.
+# start end file
+#catr() {
+#    tail -n "+$1" $3 | head -n "$(($2 - $1 + 1))"
+#}
+
+#validateYaml() {
+#    python -c 'import yaml,sys;yaml.safe_load(sys.stdin)' < $1
+#}
+#
+#goWork() {
+#    cp ~/.npm_work_rc ~/.npmrc
+#}
+#
+#goPersonal() {
+#    cp ~/.npm_personal_rc ~/.npmrc
+#}
+#
+#addThrottle() {
+#    local kbs="kbps"
+#    echo $kbs
+#    echo "About to throttle to $1 $kbs"
+#    echo "sudo tc qdisc add dev wlp59s0 handle 1: root htb default 11"
+#    echo "sudo tc class add dev wlp59s0 parent 1: classid 1:1 htb rate $1$kbs"
+#    echo "sudo tc class add dev wlp59s0 parent 1:1 classid 1:11 htb rate $1$kbs"
+#    sudo tc qdisc add dev wlp59s0 handle 1: root htb default 11
+#    sudo tc class add dev wlp59s0 parent 1: classid 1:1 htb rate $1$kbs
+#    sudo tc class add dev wlp59s0 parent 1:1 classid 1:11 htb rate $1$kbs
+#
+#removeThrottle() {
+#    sudo tc qdisc del dev wlp59s0 root
+#}
+#
+#cat1Line() {
+#    cat $1 | tr -d "\n"
+#}
+#
+#ioloop() {
+#    FIFO=$(mktemp -u /tmp/ioloop_$$_XXXXXX ) &&
+#    trap "rm -f $FIFO EXIT &&
+#    mkfifo $FIFO &&
+#    ( : <$FIFO & ) &&  # avoid deadlock on opening pipe
+#    exec >$FIFO <$FIFO
+#}
+#
+#eslintify() {
+#    cat $1 > /tmp/file_to_eslint
+#    npx eslint
+#}
+
+#OH GOD, save my eyes
+if [ -s ~/.dircolors ]; then
+	eval "$(dircolors ~/.dircolors)"
+	zstyle ':completion:*' list-colors ${(s.:.)LS_COLORS}
+fi
+
+#THIS MUST BE AT THE END OF THE FILE FOR SDKMAN TO WORK!!!
+if [ -d ~/.sdkman ]; then
+	export SDKMAN_DIR=~/.sdkman
+	[ -s ~/.sdkman/bin/sdkman-init.sh ] && source ~/.sdkman/bin/sdkman-init.sh
+fi
+
+# Go specific flags for speed boost
+#export CGO_ENABLED=0
+#export GOFLAGS='-ldflags="-s -w"'
+
+
+
+# Add ssh signing key to ssh-agent if present.
+has_passphrase() (
+	[ $# = 0 ] && exit 1
+	[ -f "`readlink -f "$1"`" ] || exit 1
+
+	# Check if setsid supports -w.
+	setsid -w echo 0 >/dev/null 2>&1 || exit 1
+
+	# Run ssh-keygen detached from terminal.
+	setsid -w ssh-keygen -y -f "$1" >/dev/null 2>&1
+)
+
+sshadd() {
+	sshagent
+	[ -n "$SSH_AUTH_SOCK" ] && (
+		ssh-add -l >/dev/null 2>&1
+		[ $? = 2 ] && exit 1
+		for key in ~/.ssh/id_rsa ~/.ssh/sign_rsa; do
+			[ -s "$key" ] || continue
+			fingerprint=`ssh-keygen -l -f "$key"`
+			ssh-add -l | grep -qF "$fingerprint" || ssh-add "$key"
+		done
+	)
+}
+

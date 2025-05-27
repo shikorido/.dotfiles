@@ -1,0 +1,71 @@
+#!/usr/bin/env sh
+
+alias auxww="watch -n1 'ps -auxww'"
+alias iotopo='sudo iotop -o'
+alias iptabstat='watch -n1 iptables -nxvL --line-numbers'
+alias iptabshow='iptables -nxvL --line-numbers'
+alias lsofc="sudo watch -n1 'lsof | grep clang'"
+alias memstat="watch -n1 'free -m; swapon --show; df -h /dev/sdc'"
+
+# VMWare uses primary but clipboard is used by GUI apps.
+# Because of that, all the aliases to xclip will utilize both primary and cliboard.
+# https://unix.stackexchange.com/questions/139191/whats-the-difference-between-primary-selection-and-clipboard-buffer
+alias xsc='xclip -selection primary -f | xclip -in -selection cliboard'
+
+uname -r | grep -q WSL2 && {
+	# Taken from here
+	# https://jaro.blog/blog/adb-in-wsl2.html
+	#unalias adb 2>/dev/null
+	#alias adbdef='"adb'"
+	#alias adbwin="\"adb\" -H $(cat /etc/resolv.conf | awk '/nameserver/ {print $2}') -P 5037"
+	#alias adbwin="\"adb\" -H $(cat /etc/resolv.conf | grep nameserver | head -n1 | cut -d ' ' -f 2 | cut -d '.' -f -3).1 -P 5037"
+	#alias adb=adbwin
+
+	# Scrcpy always uses its own adb binary.
+	export ADB_SERVER_SOCKET=tcp:$(cat /etc/resolv.conf | grep nameserver | head -n1 | cut -d ' ' -f 2 | cut -d '.' -f -3).1:5037
+	#unalias scrcpy 2>/dev/null; unalias scrcpydef 2>/dev/null
+	#alias scrcpydef=`which scrcpy`
+	#alias scrcpydef='"scrcpy"'
+	#alias scrcpy='scrcpy --no-audio --no-power-on'
+}
+
+alias vim=$VIM
+alias python=python3
+
+alias dotFileInstall=$DOTFILES/install.sh
+alias dotFileUninstall=$DOTFILES/uninstall.sh
+alias bp='dotFileInstall && . ~/.zshrc'
+alias cclip='xclip -selection primary -f | xclip -in -selection cliboard'
+alias pclip='xclip -selection primary -f | xclip -in -selection cliboard'
+
+
+
+#alias xsc='xclip -selection clipboard'
+#alias cclip='xclip -selection clipboard'
+#alias pclip='xclip -selection clipboard'
+#alias my_ip="ip address | grep -o \"inet 192.*/\" | awk '{ print \$2 }' | tr / ' ' | xargs"
+#alias asdf='setxkbmap real-prog-dvorak'
+#alias aoeu='setxkbmap us'
+#alias lkj='setxkbmap real-prog-dvorak'
+#alias snth='setxkbmap us'
+#alias esc=$HOME/.config/sway/config
+#alias vims="NVIM_LISTEN_ADDRESS=/tmp/nvim $VIM"
+#alias kill_netflix='pkill -9 GIBBON_MAIN'
+#alias work='cd ~/work'
+#alias cbp="cat $DOTFILES/zsh/.config/.zsh_profile"
+#alias ebp="$VIM $DOTFILES/.zsh_profile"
+#alias etc="$VIM $DOTFILES/awesome-streamerrc/ThePrimeagen/.tmux.conf"
+#alias evrc="$VIM $DOTFILES/awesome-streamerrc/ThePrimeagen/.vimrc"
+#alias enrc="nvim $DOTFILES/awesome-streamerrc/ThePrimeagen/init.vim --cmd \"cd $DOTFILES/awesome-streamerrc/ThePrimeagen/init.vim\""
+#alias yolo='git push origin master --force --no-verify'
+#alias eirc="nvim $XDG_CONFIG_HOME/i3/i3config"
+#alias cvrc="cat $DOTFILES/vimrc/.vimrc"
+#alias pjson='python -mjson.tool'
+#alias killBT='rfkill block bluetooth'
+#alias unKillBT='rfkill unblock bluetooth'
+#alias timeplus=$DOTFILES/apps/time_plus_30
+#alias echotime=$DOTFILES/apps/echo_time
+#alias livestream_screenkey='screenkey -s large --scr 2 -p bottom --geometry 1210x300+712+810'
+#alias yt_screenkey='screenkey -s large --scr 1 -p bottom --geometry 510x300+1412+850'
+#alias mynpm='rm ~/.npmrc'
+

@@ -1,0 +1,8 @@
+#!/usr/bin/env zsh
+
+# Auto-completion and key bindings.
+# `fzf --zsh` is available since 48.0
+# https://github.com/junegunn/fzf/tree/master?tab=readme-ov-file#setting-up-shell-integration
+command -v fzf >/dev/null && \
+    [ "$(fzf --version | cut -d. -f2)" -gt 47 ] && \
+    eval "$(fzf --zsh)"

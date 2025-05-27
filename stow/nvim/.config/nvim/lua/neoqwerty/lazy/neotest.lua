@@ -1,0 +1,30 @@
+return {}
+--return {
+--    {
+--        "nvim-neotest/neotest",
+--        dependencies = {
+--            "nvim-lua/plenary.nvim",
+--            "autoinemadec/FixCursorHold.nvim",
+--            "nvim-treesitter/nvim-treesitter",
+--            "marilari88/neotest-vitest",
+--            "nvim-neotest/neotest-plenary",
+--        },
+--        config = function()
+--            local neotest = require("neotest")
+--            neotest.setup({
+--                adapters = {
+--                    require("neotest-vitest"),
+--                    require("neotest-plenary").setup({
+--                        -- this is a standard location for minimal vim rc
+--                        -- in all ThePrimeagen's projects
+--                        min_init = "./scripts/tests/minimal.vim",
+--                    })
+--                }
+--            })
+--
+--            vim.keymap.set("n", "<leader>tc", function()
+--                neotest.run.run()
+--            end)
+--        end
+--    }
+--}

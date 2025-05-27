@@ -1,0 +1,32 @@
+#!/usr/bin/env sh
+
+if [ "`id -u`" = 0 ]; then
+    # root has no android sdk and should not have actually
+    # (will totally ruin permissions)
+    return
+fi
+
+if [ -d /opt/android-sdk ]; then
+    export ANDROID_HOME=/opt/android-sdk
+elif [ -d ~/opt/android-sdk ]; then
+    export ANDROID_HOME=/opt/android-sdk
+fi
+
+to_unix_if_msys2 ANDROID_HOME ANDROID_TOOLS ANDROID_PLATFORM_TOOLS ANDROID_NDK_HOME
+
+if [ -d "$ANDROID_HOME" ]; then
+    export ANDROID_TOOLS=${ANDROID_TOOLS:-${ANDROID_HOME}/cmdline-tools/latest/bin}
+    export ANDROID_PLATFORM_TOOLS=${ANDROID_PLATFORM_TOOLS:-${ANDROID_HOME}/platform-tools}
+    export ANDROID_NDK_HOME=${ANDROID_NDK_HOME:-${ANDROID_HOME}/ndk}
+
+    NDK_VER=`find "$ANDROID_HOME/ndk" -maxdepth 1 -type d ! -name ndk 2>/dev/null | head -1`
+    [ -n "$NDK_VER" ] && export ANDROID_NDK_HOME=$ANDROID_HOME/ndk/$NDK_VER
+
+    addToPathFront "$ANDROID_NDK_HOME"
+    addToPathFront "$ANDROID_PLATFORM_TOOLS"
+    addToPathFront "$ANDROID_TOOLS"
+    addToPathFront "$ANDROID_HOME"
+fi
+
+from_unix_if_msys2 ANDROID_HOME ANDROID_TOOLS ANDROID_PLATFORM_TOOLS ANDROID_NDK_HOME
+
