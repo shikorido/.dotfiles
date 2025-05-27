@@ -1,0 +1,31 @@
+#!/usr/bin/env zsh
+
+[[ $USERNAME != hadoop ]] && return
+
+# Hadoop requies java 8, at least the version I tried back then.
+JAVA_HOME=${JAVA_HOME:-/usr/lib/jvm/amazon-corretto-8.432}
+[[ ! -d $JAVA_HOME ]] && echo 'JAVA_HOME does not exist' && return
+
+export HADOOP_HOME=~
+export HADOOP_MAPRED_HOME=~
+export HADOOP_COMMON_HOME=~
+export HADOOP_HDFS_HOME=~
+export YARN_HOME=~
+export HADOOP_COMMON_LIB_NATIVE_DIR=~/lib/native
+export HADOOP_MODULES=~/share/hadoop
+export HDMRJ=$HADOOP_MODULES/mapreduce
+export HDCMJ=$HADOOP_MODULES/common
+export HDFSJ=$HADOOP_MODULES/hdfs
+export YARNJ=$HADOOP_MODULES/yarn
+export HADOOP_OPTS=-Djava.library.path=$HADOOP_COMMON_LIB_NATIVE_DIR
+
+addToPathFront $HADOOP_HOME/bin
+addToPathFront $HADOOP_HOME/sbin
+
+alias fs='hadoop fs'
+alias hls='fs -ls'
+
+# In case if LZO compression enabled in hadoop cluster.
+lzohead() {
+	hadoop fs -cat $1 | lzop -dc | head -1000 | less
+}

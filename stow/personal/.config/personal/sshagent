@@ -1,0 +1,172 @@
+#!/usr/bin/env zsh
+
+# Works ideal in case when "ps -ef" shows everything.
+# However, under termux user we cannot trust "ps -ef".
+#
+# We can rely on ssh-add output or return code 2 in case of broken socket:
+#  Error connecting to agent: No such file or directory
+#  Error connecting to agent: Connection refused
+# But we should not consider the following as an error:
+#  The agent has no identities. (err code 1)
+# We lack the possibility to get SSH_AGENT_PID in that case.
+#
+# UPD1. The following error arises when we probe socket from previous runs:
+#  Could not open a connection to your authentication agent.
+# So using "pkg i termux-services" (depends on runit) and "sv-enable ssh-agent" is the only way without root?
+# I will handle this case first.
+# UPD2. Being root under termux still leads to broken socket as stated above.
+# UPD3. I was wrong. The issue concluded in "ssh-add" usage without exported SSH_AUTH_SOCK.
+#       Now it works fine for termux user and termux root.
+#       Termux-services work using the following invocation:
+#        $PREFIX/bin/runsvdir $PREFIX/var/service
+#       the service directory contains a set of folders that correspond to service name (ssh-agent, sshd, tx11, tx11-xfce4).
+#       Indeed, ssh-agent service could be used for termux, but in that case we must perform
+#       chown and restorecon on $PREFIX/var/service/SERVICE_NAME/down (added using sv-disable and removed by sv-enable).
+#       I will move ssh-agent folder under $PREFIX/var/service to $PREFIX/var/service_inactive to avoid ssh-agent service listening
+#       and two processes that are tied to service life cycle:
+#        runsv ssh-agent
+#        svlogd -tt /data/data/com.termux/files/usr/var/log/sv/ssh-agent
+
+sshagent() {
+    ! whence ssh-agent >/dev/null && echo 'ssh-agent not found' && return
+
+    local ssh_agent_state ssh_agent_socket_alive
+
+    # Termux-services. Make ssh-agent inactive.
+    if [[ $_TERMUX_ && -O $PREFIX ]]; then
+        sv stop ssh-agent >/dev/null 2>&1
+        sv disable ssh-agent >dev/null 2>&1
+        mkdir -p $PREFIX/var/service_inactive
+        if [[ -d $PREFIX/var/service/ssh-agent ]]; then
+            if [[ -e $PREFIX/var/service_inactive/ssh-agent ]]; then
+                cp -RPu $PREFIX/var/service/ssh-agent/. \
+                    $PREFIX/var/service_inactive/ssh-agent/
+                rm -rf $PREFIX/var/service/ssh-agent
+            else
+                mv $PREFIX/var/service/ssh-agent $PREFIX/var/service_inactive/
+            fi
+        fi
+    fi
+
+    [[ ! -e ~/.ssh ]] && mkdir -p ~/.ssh 2>/dev/null && chmod 700 ~/.ssh
+
+    if [[ ! -d ~/.ssh && ! -L ~/.ssh ]]; then
+        echo "$HOME/.ssh is neither a folder nor a symlink, halting ssh-agent startup."
+        return
+    fi
+
+    # "ssh-add -l" approach combined with "ps -ef" to get SSH_AGENT_PID where possible.
+    if [[ $_MSYS2_ ]] && powershell.exe -Command \
+    '([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)' |
+    grep -q True; then
+        export SSH_AUTH_SOCK=~/.ssh/agent.admin.$UID
+    else
+        export SSH_AUTH_SOCK=~/.ssh/agent.$UID
+    fi
+
+    # One notable side effect of "ps -ef" in proot is the inability
+    # to get boot time, causing the command to fail.
+    # Due to the scattered available options,
+    # "ps" utility does not have wide compatibility across environments.
+    # We can't simply use "ps -e -o uid,pid,ppid,cmd" which works in kali,
+    # cause some implementations replace cmd with comm,
+    # some completely lack "-o", and etc.
+    # Thats why I decided to make sure that "ps -ef" exits cleanly
+    # before falling back to kali version.
+    ps -ef >/dev/null 2>&1
+    if [[ $? = 0 ]]; then
+        ssh_agent_state=$(ps -ef | grep 'ssh-agen')
+    else
+        ssh_agent_state=$(ps -e -o uid,pid,ppid,cmd | grep 'ssh-agen')
+    fi
+    ssh_agent_state=$(echo $ssh_agent_state | grep "^[[:space:]]*$USERNAME" | grep 'ssh-agent')
+    # Should we also match by socket?
+    # If ssh-agent was ran under admin in MSYS2 the process details are hidden
+    # under unelevated user thus we can see only /usr/bin/ssh-agent.
+    ssh_agent_state=$(echo $ssh_agent_state | grep "ssh-agent -a $SSH_AUTH_SOCK")
+
+    if [[ $_TERMUX_ && -O $PREFIX ]]; then
+        # Filter out runsv and svlogd in case of termux-services usage (testing).
+        ssh_agent_state=$(echo $ssh_agent_state | grep -v 'runsv \|svlogd ')
+    fi
+
+    ssh-add -l >/dev/null 2>&1
+    [[ $? = 2 ]] && ssh_agent_socket_alive=0 || ssh_agent_socket_alive=1
+
+    if [[ $ssh_agent_state ]]; then
+        SSH_AGENT_PID=$(echo $ssh_agent_state | awk '{print $2}')
+
+        if [[ $(echo $SSH_AGENT_PID | wc -l) -gt 1 ]]; then
+            # If multiple agents are opened, kill them all.
+            kill ${=SSH_AGENT_PID}
+            [[ -S $SSH_AUTH_SOCK ]] && rm -f $SSH_AUTH_SOCK
+            eval "$(ssh-agent -a $SSH_AUTH_SOCK)" >/dev/null
+        elif [[ $ssh_agent_socket_alive = 1 ]] && echo $ssh_agent_state | grep -q $SSH_AUTH_SOCK; then
+            # Check if agent holds desired socket.
+            export SSH_AUTH_SOCK SSH_AGENT_PID
+        else
+            # Agent does not hold desired socket, restarting.
+            kill $SSH_AGENT_PID
+            [[ -S $SSH_AUTH_SOCK ]] && rm -f $SSH_AUTH_SOCK
+            eval "$(ssh-agent -a $SSH_AUTH_SOCK)" >/dev/null
+        fi
+    else
+        if [[ $ssh_agent_socket_alive = 1 ]]; then
+            export SSH_AUTH_SOCK
+            unset SSH_AGENT_PID
+        else
+            [[ -S $SSH_AUTH_SOCK ]] && rm -f $SSH_AUTH_SOCK
+            # In WSL, sometimes ssh-agent cannot access the socket
+            # despite it does not even exist. Second try resolves the issue somehow.
+            if [[ $_WSL_ ]]; then
+                local ssh_agent_tries=10
+                local ssh_agent_eval ssh_agent_success
+                until (( --ssh_agent_tries < 0 )); do
+                    ssh_agent_eval=$(ssh-agent -a $SSH_AUTH_SOCK 2>/dev/null)
+                    if [[ $? = 0 ]]; then
+                        eval $ssh_agent_eval >/dev/null
+                        break
+                    fi
+                    rm -f $SSH_AUTH_SOCK
+                done
+                [[ $ssh_agent_success != 1 ]] && \
+                    echo "Could not start ssh-agent in WSL after 10 retries."
+            else
+                eval "$(ssh-agent -a $SSH_AUTH_SOCK)" >/dev/null
+            fi
+        fi
+    fi
+}
+
+# Add ssh signing key to ssh-agent if present.
+#has_passphrase() (
+#	[[ $# = 0 ]] && exit 1
+#	[[ -f $(readlink -f $1) ]] || exit
+#
+#	# Check if setsid supports -w.
+#	setsid -w echo 0 >/dev/null 2>&1 || exit
+#
+#	# Run ssh-keygen detached from terminal.
+#	setsid -w ssh-keygen -y -f $1 >/dev/null 2>&1
+#)
+
+sshadd() {
+    sshagent
+    local fingerprint key
+    [[ -z $SSH_AUTH_SOCK ]] && echo 'SSH_AUTH_SOCK is not defined' && return 1
+    ssh-add -l >/dev/null 2>&1
+    [[ $? = 2 ]] && echo 'ssh-agent was unable to connect to SSH_AUTH_SOCK' && return 1
+    #~/.ssh/id_rsa ~/.ssh/sign_rsa
+    for key in ~/.ssh/*.pub(DN); do
+        key=${key%.pub}
+        [[ -s $key ]] || continue
+        fingerprint=$(ssh-keygen -l -f $key)
+        ssh-add -l | grep -qF $fingerprint || ssh-add $key
+    done
+}
+
+# man zshexpn: D=GLOB_DOTS, N=NULL_GLOB, Y1=short-circuit on first match
+[[ $(echo ~/.ssh/*.pub(DNY1)) ]] || return 0
+#find ~/.ssh/ -maxdepth 1 -name '*.pub' >/dev/null 2>&1 || return 0
+
+sshagent

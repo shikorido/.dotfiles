@@ -1,0 +1,34 @@
+#!/usr/bin/env zsh
+
+[[ $USERNAME != hadoop ]] && return
+
+if [[ ! -d ~/spark-3.5.3 ]]; then
+	echo "$HOME/spark-3.5.3 is not a directory or does not exist."
+	return
+fi
+
+export SPARK_HOME=~/spark-3.5.3
+export PYSPARK_PYTHON=python3
+
+addToPathFront $SPARK_HOME/bin
+addToPathFront $SPARK_HOME/sbin
+
+if [[ :$PYTHONPATH: != *:$SPARK_HOME/python:* ]]; then
+	export PYTHONPATH=$SPARK_HOME/python:$PYTHONPATH
+fi
+
+# This function runs pyspark like jyputer notebook.
+# If the two local variables were global, pyspark shell wouldn't run.
+#snotebook() {
+#	#SPARK_PATH=$SPARK_HOME
+#	local PYSPARK_DRIVER_PYTHON="jupyter"
+#	local PYSPARK_DRIVER_PYTHON_OPTS="notebook"
+#
+#	# local[2] means 2 working threads
+#	# local[*] means as many worker threads as logical cores on machine
+#	# [ is used for globbing (man zshexpn FILENAME GENERATION for a full list).
+#	# If NOMATCH option is unset, zsh will print an error and abort command.
+#	# If NULL_GLOB is set, it overrides NOMATCH.
+#	# So, either quote it (single or double), or escape like local\[2].
+#	$SPARK_HOME/bin/pyspark --master 'local[2]'
+#}

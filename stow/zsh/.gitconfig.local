@@ -1,0 +1,20 @@
+[core]
+	eol = lf
+	autocrlf = false
+[color]
+	ui = true
+[gpg]
+	format = ssh
+[user]
+	signingkey = ~/.ssh/sign_rsa.pub
+[alias]
+	st = status
+	co = checkout
+	ci = commit
+	br = branch
+	lg = log --oneline --graph --decorate
+	gr = log --graph --decorate
+	last = log -1 HEAD
+	unstage = reset HEAD --
+	amend = commit --amend --no-edit
+	hist = log --pretty=format:'%h %ad | %s%d [%an]' --graph --date=short
