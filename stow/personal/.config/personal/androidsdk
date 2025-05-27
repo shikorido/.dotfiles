@@ -1,0 +1,35 @@
+#!/usr/bin/env zsh
+
+android_vars=(HOME TOOLS PLATFORM_TOOLS BUILD_TOOLS NDK_HOME)
+android_vars=(ANDROID_${^android_vars})
+
+if [[ -d $ANDROID_HOME ]]; then
+    :
+elif [[ -d /opt/android-sdk ]]; then
+    ANDROID_HOME=/opt/android-sdk
+elif [[ -d ~/opt/android-sdk ]]; then
+    ANDROID_HOME=/opt/android-sdk
+elif [[ -d /e/android-sdk ]]; then
+    ANDROID_HOME=/e/android-sdk
+else
+    unset $android_vars[@] android_vars
+    return
+fi
+
+to_unix_if_msys2 $android_vars[@]
+
+ANDROID_BUILD_TOOLS=${ANDROID_BUILD_TOOLS:-$ANDROID_HOME/build-tools}
+ANDROID_TOOLS=${ANDROID_TOOLS:-$ANDROID_HOME/cmdline-tools/latest/bin}
+ANDROID_PLATFORM_TOOLS=${ANDROID_PLATFORM_TOOLS:-$ANDROID_HOME/platform-tools}
+ANDROID_NDK_HOME=${ANDROID_NDK_HOME:-$ANDROID_HOME/ndk}
+export $android_vars[@]
+
+# Prints latest NDK version.
+#find "$ANDROID_HOME/ndk" -maxdepth 1 -type d ! -name ndk 2>/dev/null | head -1
+
+addToPathFront $ANDROID_PLATFORM_TOOLS
+addToPathFront $ANDROID_TOOLS
+
+from_unix_if_msys2 $android_vars[@]
+
+unset android_vars

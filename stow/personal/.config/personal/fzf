@@ -1,0 +1,13 @@
+#!/usr/bin/env zsh
+
+# Auto-completion and key bindings.
+# `fzf --zsh` is available since 48.0
+# https://github.com/junegunn/fzf/tree/master?tab=readme-ov-file#setting-up-shell-integration
+
+! whence fzf >/dev/null && echo 'fzf not found' && return
+
+if [[ $(fzf --version | cut -d. -f2 | cut -d' ' -f1) -gt 47 ]]; then
+    eval "$(fzf --zsh)"
+else
+    echo 'fzf version does not support --zsh arg, it is available since 0.48.0'
+fi
