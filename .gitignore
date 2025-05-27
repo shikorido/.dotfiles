@@ -1,0 +1,6 @@
+# Ignore assets/ for now
+assets/*
+
+# Ignore linux/ and windows/ worktrees
+linux/
+windows/
