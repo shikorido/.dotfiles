@@ -1,0 +1,14 @@
+alias luamake="/data/data/com.termux/files/home/personal/lsp_builds/lua-language-server/3rd/luamake"
+
+export LUAROCKS_SYSTEM=linux
+export TMP=~/.tmp
+[ -d "$TMP" ] || mkdir -p "$TMP"
+
+#[ -S "$PREFIX/tmp_persistent/pulse-socket" ] && export PULSE_SERVER=$PREFIX/tmp_persistent/pulse-socket
+export PULSE_SERVER=$PREFIX/tmp_persistent/pulse-socket
+[ -d "${PULSE_SERVER%/*}" ] || mkdir -p "${PULSE_SERVER%/*}"
+
+#[ "`id -u`" = 0 ] && {
+#    alias ssh="ssh -o UserKnownHostsFile=$HOME/.ssh/known_hosts -i $HOME/.ssh/id_rsa"
+#}
+
