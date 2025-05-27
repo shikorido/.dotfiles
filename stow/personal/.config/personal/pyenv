@@ -1,0 +1,47 @@
+#!/usr/bin/env zsh
+
+if [ "`id -u`" = 0 ]; then
+	# root has no pyenv and should not have actually
+	return
+fi
+
+# Load pyenv automatically
+if [ -d ~/.pyenv ]; then
+
+	export PYENV_ROOT=~/.pyenv
+	[ -d "$PYENV_ROOT/bin" ] && addToPathFront "$PYENV_ROOT/bin"
+
+	# Expanded from 'pyenv init - zsh'
+	addToPathFront "$PYENV_ROOT/shims"
+	export PYENV_SHELL=zsh
+	. "$PYENV_ROOT/completions/pyenv.zsh"
+	command pyenv rehash 2>/dev/null
+	pyenv() {
+		local command=${1:-}
+		[ "$#" -gt 0 ] && shift
+		case $command in
+			activate|deactivate|rehash|shell)
+				eval "$(pyenv "sh-$command" "$@")" ;;
+			*)
+				command pyenv "$command" "$@" ;;
+		esac
+	}
+
+	# Load pyenv-virtualenv automatically
+	# Expanded from 'pyenv virtualenv-init - zsh'
+	addToPathFront "$PYENV_ROOT/plugins/pyenv-virtualenv/shims"
+	export PYENV_VIRTUALENV_INIT=1
+	_pyenv_virtualenv_hook() {
+		local ret=$?
+		if [ -n "${VIRTUAL_ENV-}" ]; then
+			eval "$(pyenv sh-activate --quiet || pyenv sh-deactivate --quiet || true)" || true
+		else
+			eval "$(pyenv sh-activate --quiet || true)" || true
+		fi
+		return $ret
+	}
+	typeset -g -a precmd_functions
+	if [[ -z $precmd_functions[(r)_pyenv_virtualenv_hook] ]]; then
+		precmd_functions=(_pyenv_virtualenv_hook $precmd_functions)
+	fi
+fi
