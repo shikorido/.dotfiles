@@ -1,0 +1,141 @@
+#!/usr/bin/env bash
+
+msys2_root=C:\\msys64
+msys2_root_map() {
+    [ -z "$msys2_root" ] && return 1
+    # Direct root mapping
+    case $1 in
+        /bin)
+            printf %s "$msys2_root\\bin" ;;
+        /clang64)
+            printf %s "$msys2_root\\clang64" ;;
+        /clangarm64)
+            printf %s "$msys2_root\\clangarm64" ;;
+        /dev)
+            printf %s "$msys2_root\\dev" ;;
+        /etc)
+            printf %s "$msys2_root\\etc" ;;
+        /home)
+            printf %s "$msys2_root\\home" ;;
+        /installerResources)
+            printf %s "$msys2_root\\installerResources" ;;
+        /mingw32)
+            printf %s "$msys2_root\\mingw32" ;;
+        /mingw64)
+            printf %s "$msys2_root\\mingw64" ;;
+        /opt)
+            printf %s "$msys2_root\\opt" ;;
+        /proc)
+            printf %s "$msys2_root\\proc" ;;
+        /tmp)
+            printf %s "$msys2_root\\tmp" ;;
+        /ucrt64)
+            printf %s "$msys2_root\\ucrt64" ;;
+        /usr)
+            printf %s "$msys2_root\\usr" ;;
+        /var)
+            printf %s "$msys2_root\\var" ;;
+        *)
+            return 1 ;;
+    esac
+}
+
+# msys2 to windows actually.
+# $1 - posix_path
+posix_to_windows() (
+    posix_path=$1
+    # Sanity checks
+    [ "$_MSYS2_" = 0 ] || [ -z "$posix_path" ] || [ -z "$msys2_root" ] && printf %s "$posix_path" && exit 0
+
+    prefix_changed=0
+
+    # Not a case in WezTerm config.
+    # For edgy-ephemeral cases when vim.fn.expand() eats posix-style path.
+    # In that case we get backslashes everywhere which we don't need
+    # when working with libuv which uses WinAPI under the hood.
+    # E.g. vim.fn.expand("/home/User") gives "\home\User".
+    #posix_path = posix_path:gsub("\\", "/")
+
+    # Another one edgy-ephemeral case when we have only "/".
+    [ "$prefix_changed" -eq 0 ] && case $posix_path in
+        /)
+            #wezwarn("Only '/' case: " .. posix_path)
+            posix_path=`printf %s "$msys2_root"`
+            prefix_changed=1 ;;
+    esac
+
+    # Apply root folder mappings only if path starts with "/" and has at least 3 chars after
+    [ "$prefix_changed" -eq 0 ] && case $posix_path in
+        /[A-Za-z][A-Za-z][A-Za-z])
+            #wezwarn("msys2 root mapping case: " .. posix_path)
+            __=`msys2_root_map "$posix_path"`
+            [ $? -eq 0 ] && posix_path=$__ && unset __ && prefix_changed=1 ;;
+    esac
+
+    # Drive letter paths /c/Users -> C:\\Users (+edge case on fast pane split in WezTerm /C:/Users -> C:\\Users).
+    # It is possible to have only "/c" (w/o trailing "/") but not "/C:" (WezTerm internally trails it with "/").
+    # Idk if WezTerm paths behaviour leaks to msys2 actually cause even in regular cmd.exe/powershell.exe it uses
+    # "/<DRIVE>:/" notation internally for panes.
+    if [ "$prefix_changed" -eq 0 ]; then
+        case $posix_path in
+            /[A-Za-z])
+                #wezwarn("Only '/[A-Za-z]' case: " .. posix_path)
+                posix_path=`printf %s "${posix_path#/}:\\\\"`
+                prefix_changed=1 ;;
+            /[A-Za-z]/*)
+                #wezwarn("'^/[A-Za-z]/' case: " .. posix_path)
+                posix_path=`printf %s "$posix_path" | sed "s#^/\([A-Za-z]\)#\1:#"`
+                prefix_changed=1 ;;
+            /[A-Za-z]:/*)
+                #wezwarn("'^/[A-Za-z]:/' case: " .. posix_path)
+                posix_path=`printf %s "${posix_path#/}"`
+                prefix_changed=1 ;;
+            *)
+                # The code path can be taken only in specific cases
+                # like a custom folder under msys2 root (/abc).
+                #wezwarn("General mapping case for given path: " .. posix_path)
+                posix_path=`printf %s "$msys2_root\\\\${posix_path#/}"`
+                prefix_changed=1 ;;
+        esac
+    fi
+
+    # Lets try to use posix-style paths for testing.
+    #posix_path = posix_path:gsub("^/([A-Za-z]):?([^0-9A-Za-z_-]?)", "/%1%2")
+
+    # Replace remaining forward slashes with backslashes.
+    posix_path=`printf %s "$posix_path" | tr '/' '\\\\'`
+
+    # For bash.exe (nvim shell) it is better to use forward slashes
+    # cause backslashes must to be escaped. Need to come up with something
+    # cause nvim for windows (even clang64 binary) prefers windows-style paths (but works with forward slashes as well?).
+    # UPD. "set shellslash" makes the trick by converting backslashes to forward slashes in shell invocations.
+    #posix_path = posix_path:gsub("\\", "/")
+
+    # Drive letter to upper case
+    case $posix_path in
+        [a-z]*)
+            # https://stackoverflow.com/questions/4569825/sed-one-liner-to-convert-all-uppercase-to-lowercase
+            # 1. Some systems have no preinstalled perl (android).
+            # 2. awk's toupper(), tolower() are extensions.
+            # 3. sed's \U, \L are GNU extensions.
+            # 4. tr is most portable but lacks UTF-8 support and operates only on ASCII character set.
+            # In my case I want to uppercase only first letter.
+            # It is simple to accomplish with variable expansions and mark like @.
+            posix_path=`printf %s "$posix_path" | sed "s#^\([a-z]\)#\1@#"`
+            posix_path=`printf %s "${posix_path%%@*}" | tr '[:lower:]' '[:upper:]'`${posix_path#*@} ;;
+    esac
+
+    #wezwarn("posix_to_windows will return " .. posix_path)
+
+    printf "%s\n" "$posix_path"
+)
+
+show_git_obj() {
+    #git cat-file -t "$1"
+    #git cat-file -s "$1"
+    git cat-file -p "$1"
+    #printf "%*s\n" 80 "" | tr ' ' '-'
+    # Do you know what real madness is?
+    printf "%s\n" "`python -c "\`echo 'from hashlib import sha1, sha256\nimport zlib\nobj_hash="'"$1"'"\nwith open("'"\\\`posix_to_windows "\\\\\\\`git rev-parse --absolute-git-dir\\\\\\\`" | tr '\\\\\\\\\\\\\\\\' '/'\\\`"'/objects/"+obj_hash[0:2]+"/"+obj_hash[2:],"br") as f:\n\tdec_bin = zlib.decompress(f.read())\nprint(dec_bin)\nprint(sha1(dec_bin).digest().hex())'\`"`"
+}
+

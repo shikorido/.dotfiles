@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+
+addToPathFront "$HOME/.local/bin"
+addToPathFront "$HOME/.bin"
+addToPathFront "/opt/nvim/bin"
+addToPathFront "/usr/local/bin"
+
+#addToPathFront $HOME/.zig
+#addToPathFront $HOME/.local/.npm-global/bin
+#addToPathFront $HOME/.local/scripts
+#addToPathFront $HOME/bin
+#addToPathFront $HOME/.local/n/bin
+#addToPathFront $HOME/.local/go/bin
+#addToPathFront $HOME/go/bin
+#addToPathFront $HOME/personal/sumneko/bin
+#addToPathFront $HOME/.deno
+
+#addToPathFront ~/anaconda/bin
+
+#addToPathFront /home/theprimeagen/n/bin
+#addToPathFront $DENO_INSTALL
+#addToPath /home/theprimeagen/personal/lua-language-server/bin/Linux
+#addToPath /usr/local/go/bin
+#addToPath $GOPATH/bin
+#addToPath $HOME/work/wrapper
+#addToPath /usr/local/netflix/tvui-automation-analyzer
+#addToPath /usr/local/netflix/encoders/bin
+#addToPath $HOME/.yarn/bin
+#addToPath /usr/lib/llvm-8/bin
+#addToPath $HOME/personal/uhh/buid
+#addToPath "$HOME/.cargo/bin"
+#addToPath "$HOME/.rustup"
+
+# ccache
+#addToPath /usr/lib/ccache
+
+addToPathFront "/opt/awg/bin"
+
