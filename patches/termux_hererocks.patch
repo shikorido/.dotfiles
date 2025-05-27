@@ -1,0 +1,45 @@
+--- .local/share/nvim/lazy-rocks/hererocks/share/lua/5.1/luarocks/core/sysdetect.lua
++++ .local/share/nvim/lazy-rocks/hererocks/share/lua/5.1/luarocks/core/sysdetect.lua
+@@ -136,6 +136,13 @@
+ end
+
+ local function detect_elf_system(fd, hdr, sections)
++
++   --termux patch for system detection (linux)
++   local override_system = os.getenv("LUAROCKS_SYSTEM")
++   if override_system then
++      return override_system
++   end
++
+    local system = e_osabi[hdr.osabi]
+    local endian = hdr.endian
+
+--- .local/share/nvim/lazy-rocks/hererocks/share/lua/5.1/luarocks/core/util.lua
++++ .local/share/nvim/lazy-rocks/hererocks/share/lua/5.1/luarocks/core/util.lua
+@@ -14,9 +14,10 @@
+ -- May be used to read more, passing, for instance, "*a".
+ -- @return string: the output of the program.
+ function util.popen_read(cmd, spec)
+-   local tmpfile = (dir_sep == "\\")
+-                   and (os.getenv("TMP") .. "/luarocks-" .. tostring(math.floor(math.random() * 10000)))
++   --termux patch for temp file usage cause os.tmpname() does not work as intended here. mimicking under windows' TMP env var to specify temp folder
++   local tmpfile = (os.getenv("TMP") .. "/luarocks-" .. tostring(math.floor(math.random() * 10000)))
+                    or os.tmpname()
++   --(dir_sep == "\\")
+    os.execute(cmd .. " > " .. tmpfile)
+    local fd = io.open(tmpfile, "rb")
+    if not fd then
+--- .local/share/nvim/lazy-rocks/hererocks/share/lua/5.1/luarocks/fs/unix/tools.lua
++++ .local/share/nvim/lazy-rocks/hererocks/share/lua/5.1/luarocks/fs/unix/tools.lua
+@@ -335,7 +335,10 @@
+
+    local force_flag = force and " -f" or ""
+
+-   if fs.execute(vars.LN .. force_flag, tempfile, lockfile) then
++   --termux patch for symbolic links usage instead of hardlinks
++   local symlink_flag = " -s"
++
++   if fs.execute(vars.LN .. force_flag .. symlink_flag, tempfile, lockfile) then
+       return {
+          tempfile = tempfile,
+          lockfile = lockfile,

@@ -1,0 +1,102 @@
+#!/data/data/com.termux/files/usr/bin/bash -e
+PROOT_DIR=/data/data/com.termux/files/home/kali
+[ -s "$PROOT_DIR/bin/sh" ] || {
+    echo "Your proot at $PROOT_DIR has no /bin/sh."
+    echo "Are you sure the PROOT is valid?"
+    exit 1
+}
+cd "${HOME}"
+## pulseaudio must be ran before LD_PRELOAD unset
+if pidof pulseaudio >/dev/null; then
+    pulseaudio -k
+fi
+pulseaudio -D --exit-idle-time=-1
+## termux-exec sets LD_PRELOAD so let's unset it before continuing
+unset LD_PRELOAD
+## Workaround for Libreoffice, also needs to bind a fake /proc/version
+if [ ! -f "$PROOT_DIR/root/.version" ]; then
+    touch "$PROOT_DIR/root/.version"
+fi
+
+## Default user is "kali"
+user="kali"
+home="/home/$user"
+start="sudo -u kali /bin/zsh -l -i"
+
+## NH can be launched as root with the "-r" cmd attribute
+## Also check if user kali exists, if not start as root
+if grep -q "kali" "$PROOT_DIR/etc/passwd"; then
+    KALIUSR="1";
+else
+    KALIUSR="0";
+fi
+if [[ $KALIUSR == "0" || ("$#" != "0" && ("$1" == "-r" || "$1" == "-R")) ]];then
+    user="root"
+    home="/$user"
+    # sudo will correctly define SHELL for dircolors
+    start="sudo /bin/zsh -l -i"
+    #start="/bin/zsh -l -i"
+    if [[ "$#" != "0" && ("$1" == "-r" || "$1" == "-R") ]];then
+        shift
+    fi
+fi
+
+#export PULSE_SOCKET=$(find "/data/data/com.termux/files/usr/tmp" -type s -name "native")
+export PULSE_SOCKET=~/../usr/tmp_persistent/pulse-socket
+if [ -S "$PULSE_SOCKET" ]; then
+cmdline="proot \
+    --ashmem-memfd \
+    --link2symlink \
+    --sysvipc \
+    -p \
+    -L \
+    -H \
+    -0 \
+    -r "$PROOT_DIR" \
+    -b /dev \
+    -b /proc \
+    -b /sys \
+    -b "$PROOT_DIR$home:/dev/shm" \
+    -b "$PULSE_SOCKET:/tmp/pulse-socket" \
+    -w $home \
+       /usr/bin/env -i \
+       HOME=$home \
+       PATH=/usr/local/sbin:/usr/local/bin:/bin:/usr/bin:/sbin:/usr/sbin \
+       TERM=$TERM \
+       COLORTERM=$COLORTERM \
+       LC_ALL=en_US.UTF-8 \
+       LC_LANG=en_US.UTF-8 \
+       LANG=en_US.UTF-8 \
+       $start"
+else
+cmdline="proot \
+    --ashmem-memfd \
+    --link2symlink \
+    --sysvipc \
+    -p \
+    -L \
+    -H \
+    -0 \
+    -r "$PROOT_DIR" \
+    -b /dev \
+    -b /proc \
+    -b /sys \
+    -b "$PROOT_DIR$home:/dev/shm" \
+    -w $home \
+       /usr/bin/env -i \
+       HOME=$home \
+       PATH=/usr/local/sbin:/usr/local/bin:/bin:/usr/bin:/sbin:/usr/sbin \
+       TERM=$TERM \
+       COLORTERM=$COLORTERM \
+       LC_ALL=en_US.UTF-8 \
+       LC_LANG=en_US.UTF-8 \
+       LANG=en_US.UTF-8 \
+       $start"
+fi
+
+cmd="$@"
+if [ $# = 0 ];then
+    exec $cmdline
+else
+    $cmdline -c "$cmd"
+fi
