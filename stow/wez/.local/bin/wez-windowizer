@@ -1,0 +1,55 @@
+#!/usr/bin/env sh
+
+# In order to avoid double zsh initialization - check if fzf is available.
+! command -v fzf >/dev/null && {
+	if [ -x ~/.fzf/bin/fzf ]; then
+		PATH=~/.fzf/bin:$PATH
+	else
+		printf %s "Could not find fzf executable." && sleep 5 && exit 1
+	fi
+}
+
+if [ $# -eq 1 ]; then
+	selected=$1
+else
+	selected=`find /home ~ ~/.config /opt -mindepth 1 -maxdepth 1 \
+		\( -type d -o \( -type l -exec test -d {} \; \) \) -print 2>/dev/null |
+		fzf`
+fi
+
+if [ -z "$selected" ]; then
+	exit 0
+fi
+
+# The variables below are taken from WezTerm config file.
+# Not using -i to save environment variables from wezterm and windows,
+# otherwise we must define on our own:
+#     LANG="en_US.UTF-8"
+#     LC_ALL="en_US.UTF-8"
+#     TERM="xterm-256color"
+#     COLORTERM="truecolor"
+#     MSYSTEM="MINGW64"
+#     MSYS="winsymlinks:native"
+#     MSYS2_PATH_TYPE="inherit"
+#     CHERE_INVOKING="1"
+# to avoid issues in zsh (?➜) if TERM variable is unsetted.
+# It can potentially be harmful if login-sensitive variables
+# were not unsetted before running the script from the current zsh shell.
+# For example, __WEZTERM_CHPWD_INIT and __WEZTERM_CHPWD_HOOK,
+# because if the chpwdhook was changed it won't be re-initialized.
+# Invoking wez-windowizer from the current zsh shell is pointless though.
+
+# Which one is better, as-is or resolve?
+# I think, as-is, because it aligns with find results.
+# Or, probably, find should not show symlinked directories at all?
+
+# Does not resolve directory symlinks.
+/usr/bin/sh -c "cd '$selected'; \
+	/usr/bin/zsh -l -i"
+
+# Resolves directory symlinks.
+#/usr/bin/env -C "$selected" \
+#	/usr/bin/zsh -l -i
+
+exit 0
+
