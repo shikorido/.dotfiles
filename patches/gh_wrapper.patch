@@ -1,0 +1,13 @@
+--- bin/gh	2026-08-27 02:36:30.320474100 +0300
++++ bin/gh	2026-08-27 02:33:15.821972600 +0300
+@@ -2,7 +2,9 @@
+
+ GH_EXE="$( dirname ${BASH_SOURCE[0]} )/gh.exe"
+
+-if [ -t 0 -a -t 1 -a -x /usr/bin/winpty ]; then
++# Slightly modified condition for bypassing winpty when mintty is not presumably used.
++# This should indicate that we are already relying on ConPTY.
++if [ "$MSYSCON" = mintty -a -t 0 -a -t 1 -a -x /usr/bin/winpty ]; then
+   /usr/bin/winpty $GH_EXE "$@"
+ else
+   exec $GH_EXE "$@"
