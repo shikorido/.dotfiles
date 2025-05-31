@@ -1,0 +1,8 @@
+--- node_modules/npm/lib/utils/is-windows.js
++++ node_modules/npm/lib/utils/is-windows.js
+@@ -1,4 +1,4 @@
+ const isWindowsShell = (process.platform === 'win32') &&
+-  !/^MINGW(32|64)$/.test(process.env.MSYSTEM) && process.env.TERM !== 'cygwin'
++  !/^(MINGW|CLANG|URCT)(32|64)$/.test(process.env.MSYSTEM) && process.env.TERM !== 'cygwin'
+
+ exports.isWindowsShell = isWindowsShell
