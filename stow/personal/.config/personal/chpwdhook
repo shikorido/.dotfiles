@@ -1,0 +1,76 @@
+#!/usr/bin/env zsh
+
+if [[ -z $__WEZTERM_CHPWD_INIT ]]; then
+
+	# This function emits an OSC 1337 sequence to set a user var
+	# associated with the current terminal pane.
+	# It requires the `base64` utility to be available in the path.
+	# This function is included in the wezterm shell integration script, but
+	# is reproduced here for clarity.
+	__wezterm_set_user_var() {
+		if hash base64 2>/dev/null; then
+			if [[ -z $TMUX ]]; then
+				# Make sure to disable base64 wrap.
+				printf '\033]1337;SetUserVar=%s=%s\007' "$1" "`printf %s "$2" | base64 -w0`"
+			else
+				# https://github.com/tmux/tmux/wiki/FAQ#what-is-the-passthrough-escape-sequence-and-how-do-i-use-it
+				# Note that you ALSO need to add "set -g allow-passthrough on" to your tmux.conf
+				printf '\033Ptmux;\033\033]1337;SetUserVar=%s=%s\007\033\\' "$1" "`printf %s "$2" | base64 -w0`"
+			fi
+		fi
+	}
+
+	wezterm_chpwd_handler() {
+		if [[ $WEZTERM_PANE ]]; then
+			__wezterm_set_user_var ZSH_ORIG_CWD $PWD
+		fi
+	}
+
+	# Save the current cwd before Oh My Zsh changes it
+	__wezterm_set_user_var ZSH_ORIG_CWD $PWD
+
+	# If chpwd is not defined as a function chpwd_functions won't work.
+	# Make sure it is defined and stub if necessary.
+	# UPD. Wrong. How did I even come up to this?
+	#      Looks like I didn't notice that chpwd_functions
+	#      might not be defined as an array (or at all),
+	#      and `+=` does not create an array.
+	#[[ -z $(typeset -f chpwd) ]] && chpwd() {}
+
+	#typeset -a
+
+
+	#if (( ${chpwd_functions[(Ie)wezterm_chpwd_handler]} )); then
+
+	export __WEZTERM_CHPWD_INIT=y
+fi
+
+if [[ -z $__WEZTERM_CHPWD_HOOK ]]; then
+
+	# Zsh hook that gets called on every pwd change.
+	# Make sure to hook after oh-my-zsh initialization
+	# to avoid false cwds from zsh init for new panes on rapid splitting.
+	if command -v omz >/dev/null && (( ${chpwd_functions[(Ie)wezterm_chpwd_handler]} == 0 )); then
+		# Taken and adapted from omz/lib/termsupport.zsh to emit windows-style path.
+		# It should be already in precmd hooks unless conditions preventing its definition were met.
+		if whence omz_termsupport_cwd >/dev/null; then
+			omz_termsupport_cwd() {
+				setopt localoptions unset
+				# Percent-encode the host and path names.
+				local URL_HOST URL_PATH
+				URL_HOST="$(omz_urlencode -P $HOST)" || return 1
+				URL_PATH="$(omz_urlencode -P $(cygpath -m $PWD))" || return 1
+
+				# Konsole errors if the HOST is provided
+				[[ -z "$KONSOLE_PROFILE_NAME" && -z "$KONSOLE_DBUS_SESSION"  ]] || URL_HOST=""
+
+				# common control sequence (OSC 7) to set current host and path
+				printf "\e]7;file://%s%s\e\\" "${URL_HOST}" "${URL_PATH}"
+			}
+		fi
+
+		add-zsh-hook chpwd wezterm_chpwd_handler
+		export __WEZTERM_CHPWD_HOOK=y
+	fi
+fi
+
