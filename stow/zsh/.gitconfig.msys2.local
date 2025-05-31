@@ -1,0 +1,25 @@
+[diff "astextplain"]
+	textconv = astextplain
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
+[http]
+	sslBackend = openssl
+	#sslBackend = schannel
+[core]
+	#autocrlf = true
+	filemode = false
+	fscache = true
+	symlinks = true
+[gpg]
+	program = /usr/bin/gpg.exe
+[pull]
+	rebase = false
+[credential]
+	helper = manager
+[credential "https://dev.azure.com"]
+	useHttpPath = true
+[init]
+	defaultBranch = master
