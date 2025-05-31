@@ -1,0 +1,19 @@
+#!/usr/bin/env sh
+
+if [ $# -eq 1 ]; then
+    selected=$1
+else
+    selected=$(find /home ~ ~/.config /opt -mindepth 1 -maxdepth 1 -type d 2>/dev/null | fzf)
+fi
+
+if [ -z "$selected" ]; then
+    exit 0
+fi
+
+# Works but bad cause of tainted environment.
+#sh -c "cd $selected; /usr/bin/zsh -i"
+
+# Ends up with a broken zsh state (?➜) if TERM variable is unsetted.
+# The variables below are taken from WezTerm config file.
+# Plus PATH inheritance cause Windows' PATHs are lost in a new shell.
+env -i -C "$selected" PATH="$PATH" LANG="en_US.UTF-8" LC_ALL="en_US.UTF-8" TERM="xterm-256color" COLORTERM="truecolor" MSYSTEM="MINGW64" MSYS="winsymlinks:nativestrict" MSYS2_PATH_TYPE="inherit" CHERE_INVOKING="1" /usr/bin/zsh -l -i
