@@ -1,0 +1,206 @@
+diff --git a/lua/telescope/_.lua b/lua/telescope/_.lua
+index 6adc5a6..818917a 100644
+--- a/lua/telescope/_.lua
++++ b/lua/telescope/_.lua
+@@ -9,6 +9,10 @@ local utils = require "telescope.utils"
+ 
+ local M = {}
+ 
++--qqq
++local U = require "plenary.utils"
++--!qqq
++
+ local AsyncJob = {}
+ AsyncJob.__index = AsyncJob
+ 
+@@ -31,6 +35,15 @@ function AsyncJob.new(opts)
+     end
+   end
+ 
++  --qqq
++  -- Due to explicit uv.spawn calls w/o plenary's Path/Job
++  -- we must adjust our path here as well
++  if U.is_msys2 then
++    opts.cwd = U.posix_to_windows(opts.cwd)
++    self.uv_opts.cwd = opts.cwd
++  end
++  --!qqq
++
+   self.uv_opts.stdio = {
+     self.stdin.handle,
+     self.stdout.handle,
+diff --git a/lua/telescope/actions/init.lua b/lua/telescope/actions/init.lua
+index 0e0decb..228767f 100644
+--- a/lua/telescope/actions/init.lua
++++ b/lua/telescope/actions/init.lua
+@@ -69,6 +69,10 @@ local from_entry = require "telescope.from_entry"
+ local transform_mod = require("telescope.actions.mt").transform_mod
+ local resolver = require "telescope.config.resolve"
+ 
++--qqq
++local U = require "plenary.utils"
++--!qqq
++
+ local actions = setmetatable({}, {
+   __index = function(_, k)
+     error("Key does not exist for 'telescope.actions': " .. tostring(k))
+@@ -521,7 +525,23 @@ actions.git_apply_stash = function(prompt_bufnr)
+     return
+   end
+   actions.close(prompt_bufnr)
+-  local _, ret, stderr = utils.get_os_command_output { "git", "stash", "apply", "--index", selection.value }
++  --qqq
++  --vim.notify("git_apply_stash: " .. vim.inspect(selection.value), vim.log.levels.ERROR)
++  if U.is_msys2 then
++    -- Either because I use zsh.exe or bash.exe (nvim's shell) handles "{}" specially
++    -- we need to escape it here. And in other places that use "{}" un-escaped.
++    -- Idk exactly why "{}" disappears from the final command.
++    -- utils.get_os_command_output { "echo", "$SHELL" } outputs { "$SHELL" }
++    -- even when I add "{}" to escape chars in "plenary/job.lua:expand()"
++    -- (which was not called anyway).
++    --
++    local esc_value = vim.fn.escape(selection.value, "{}")
++    local _, ret, stderr = utils.get_os_command_output { "git", "stash", "apply", "--index", esc_value }
++  else
++    local _, ret, stderr = utils.get_os_command_output { "git", "stash", "apply", "--index", selection.value }
++  end
++  --!qqq
++  --local _, ret, stderr = utils.get_os_command_output { "git", "stash", "apply", "--index", selection.value }
+   if ret == 0 then
+     utils.notify("actions.git_apply_stash", {
+       msg = string.format("applied: '%s' ", selection.value),
+diff --git a/lua/telescope/builtin/__git.lua b/lua/telescope/builtin/__git.lua
+index bafc361..e1b4a4a 100644
+--- a/lua/telescope/builtin/__git.lua
++++ b/lua/telescope/builtin/__git.lua
+@@ -11,6 +11,10 @@ local Path = require "plenary.path"
+ 
+ local conf = require("telescope.config").values
+ 
++--qqq
++local U = require "plenary.utils"
++--!qqq
++
+ local git = {}
+ 
+ git.files = function(opts)
+@@ -40,6 +44,10 @@ git.files = function(opts)
+     { "git", "-c", "core.quotepath=false", "ls-files", "--exclude-standard", "--cached" }
+   )
+ 
++  --qqq
++  --vim.notify("git.files: " .. vim.inspect(opts), vim.log.levels.ERROR)
++  --!qqq
++
+   pickers
+     .new(opts, {
+       prompt_title = "Git Files",
+@@ -121,6 +129,13 @@ git.bcommits = function(opts)
+   local git_command =
+     vim.F.if_nil(opts.git_command, { "git", "log", "--pretty=oneline", "--abbrev-commit", "--follow" })
+ 
++  --qqq
++  --vim.notify("git.bcommits: " .. vim.inspect(git_command) .. ", " .. vim.inspect(opts), vim.log.levels.ERROR)
++  --if U.is_msys2 then
++  --  opts.current_file = U.posix_to_windows(opts.current_file)
++  --end
++  --!qqq
++
+   pickers
+     .new(opts, {
+       prompt_title = "Git BCommits",
+@@ -314,6 +329,14 @@ git.status = function(opts)
+     return
+   end
+ 
++  --qqq
++  -- Running "nvim ."->":Telescope git_status" ends up with posix-style path
++  --if opts.cwd:find("^/") then
++  --  vim.notify("git.status: opts.cwd = " .. vim.inspect(opts.cwd), vim.log.levels.ERROR)
++  --  error(debug.traceback())
++  --end
++  --!qqq
++
+   local gen_new_finder = function()
+     local expand_dir = vim.F.if_nil(opts.expand_dir, true)
+     local git_cmd = { "git", "status", "-z", "--", "." }
+@@ -371,6 +394,15 @@ local set_opts_cwd = function(opts)
+     opts.cwd = vim.loop.cwd()
+   end
+ 
++  --qqq
++  -- Running "nvim ."->":Telescope git_status" ends up with posix-style path
++  --vim.notify("set_opts_cwd: opts = " .. vim.inspect(opts), vim.log.levels.ERROR)
++  --error(debug.traceback())
++  if U.is_msys2 then
++    opts.cwd = U.posix_to_windows(opts.cwd)
++  end
++  --!qqq
++
+   -- Find root of git directory and remove trailing newline characters
+   local git_root, ret = utils.get_os_command_output({ "git", "rev-parse", "--show-toplevel" }, opts.cwd)
+   local use_git_root = vim.F.if_nil(opts.use_git_root, true)
+diff --git a/lua/telescope/previewers/utils.lua b/lua/telescope/previewers/utils.lua
+index d834837..4486987 100644
+--- a/lua/telescope/previewers/utils.lua
++++ b/lua/telescope/previewers/utils.lua
+@@ -9,6 +9,10 @@ local _, ts_parsers = pcall(require, "nvim-treesitter.parsers")
+ 
+ local Job = require "plenary.job"
+ 
++--qqq
++local U = require "plenary.utils"
++--!qqq
++
+ local utils = {}
+ 
+ utils.with_preview_window = function(status, bufnr, callable)
+@@ -32,6 +36,15 @@ utils.job_maker = function(cmd, bufnr, opts)
+   -- if passed, they will be use as the cache key
+   -- if any of them are missing, cache will be skipped
+   if opts.bufname ~= opts.value or not opts.bufname or not opts.value then
++
++    --qqq
++    -- Will it be better to change self._raw_cwd in plenary's Job:_execute method?
++    -- UPD. Making the path transformation in Job:new() solves "nvim ."->":Telescope git_commits"
++    --if U.is_msys2 then
++    --  opts.cwd = U.posix_to_windows(opts.cwd)
++    --end
++    --!qqq
++
+     local command = table.remove(cmd, 1)
+     local writer = (function()
+       if opts.writer ~= nil then
+diff --git a/lua/telescope/utils.lua b/lua/telescope/utils.lua
+index e3fb05c..79d10fa 100644
+--- a/lua/telescope/utils.lua
++++ b/lua/telescope/utils.lua
+@@ -55,7 +55,11 @@ utils.path_expand = function(path)
+   end
+ 
+   if path:sub(1, 1) == "~" then
+-    local home = vim.loop.os_homedir() or "~"
++    --qqq
++    -- vim.loop.os_homedir() ignores HOME env variable in msys2
++    local home = vim.fn.expand("~") or "~"
++    --!qqq
++    --local home = vim.loop.os_homedir() or "~"
+     if home:sub(-1) == "\\" or home:sub(-1) == "/" then
+       home = home:sub(1, -2)
+     end
+@@ -487,6 +491,15 @@ function utils.get_os_command_output(cmd, cwd)
+     })
+     return {}
+   end
++  --qqq
++  -- Running "nvim ."->":Telescope git_status" ends up with posix-style path
++  -- UPD. Changing set_opts_cwd solves it.
++  --if cwd:find("^/") then
++  --  vim.notify("get_os_command_output: cmd = " .. vim.inspect(cmd) .. ", cwd = " .. vim.inspect(cwd), vim.log.levels.ERROR)
++  --  error(debug.traceback())
++  --end
++  --vim.notify("get_os_command_output: " .. vim.inspect(cmd) .. ", " .. vim.inspect(cwd), vim.log.levels.ERROR)
++  --!qqq
+   local command = table.remove(cmd, 1)
+   local stderr = {}
+   local stdout, ret = Job:new({
