@@ -29,7 +29,9 @@ return {
                         return true
                     end
 
-                    local max_filesize = 100 * 1024 -- 100 KB
+                    -- Some files in linux kernel sources exceed the 100KB limit
+                    -- Because of that the limit was increased up to 250KB
+                    local max_filesize = 250 * 1024 -- 250KB
                     local ok, stats = pcall(vim.loop.fs_stat, vim.api.nvim_buf_get_name(buf))
                     if ok and stats and stats.size > max_filesize then
                         vim.notify(

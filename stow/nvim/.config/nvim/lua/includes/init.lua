@@ -21,15 +21,13 @@ local usercmd = vim.api.nvim_create_user_command
 local IncludesGroup = augroup("Includes", {})
 local yank_group = augroup("HighlightYank", {})
 
-
 function R(name)
     require("plenary.reload").reload_module(name)
 end
 
-
 -----@diagnostic disable-next-line:unused-local,unused-function
 local function endswith(str, suffix)
-	return str:sub(-#suffix) == suffix
+    return str:sub(- #suffix) == suffix
 end
 
 autocmd("BufEnter", {
@@ -63,16 +61,10 @@ usercmd("TSRestart", function()
     local bufnr = vim.api.nvim_get_current_buf()
     local lang  = vim.treesitter.language.get_lang(vim.bo[bufnr].filetype)
 
+
     vim.treesitter.highlighter.active[bufnr] = nil
     vim.treesitter.stop(bufnr)
     vim.treesitter.start(bufnr, lang)
-    --or
-    --vim.cmd(":e")
-
-    --detach not found
-    --local ts_utils = require("nvim-treesitter.ts_utils")
-    --ts_utils.detach(bufnr)
-    --ts_utils.attach(bufnr)
 
     print("Tree-sitter restarted for buffer " .. bufnr)
 end, {})
@@ -95,7 +87,7 @@ autocmd("TextYankPost", {
     end
 })
 
-autocmd({"BufWritePre"}, {
+autocmd({ "BufWritePre" }, {
     group = IncludesGroup,
     pattern = "*",
     command = [[%s/\s\+$//e]]
@@ -128,4 +120,3 @@ autocmd("LspAttach", {
         vim.keymap.set("n", "]d", function() vim.diagnostic.goto_prev() end, opts)
     end
 })
-

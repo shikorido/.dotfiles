@@ -1,3 +1,5 @@
+[core]
+    eol = lf
 [color]
     ui = true
 [alias]
