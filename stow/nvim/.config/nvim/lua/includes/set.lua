@@ -5,6 +5,8 @@ if vim.loop.os_uname().version:match("Windows") then
     vim.opt.shellcmdflag = "-c"
     vim.opt.shellquote = ""
     vim.opt.shellxquote = ""
+    -- Changes forward slashes to backslashes in shell invocations.
+    vim.opt.shellslash = true
 end
 
 vim.opt.mouse = ""

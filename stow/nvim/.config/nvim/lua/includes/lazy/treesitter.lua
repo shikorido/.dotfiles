@@ -4,9 +4,11 @@ return {
     config = function()
         require("nvim-treesitter.configs").setup({
             -- A list of parser names, or "all"
+            -- "gitcommit" was added due to false-positive internal logic
+            -- that tries to install "tree-sitter-gitcommit" which does not exist.
             ensure_installed = {
                 "vimdoc", "javascript", "c", "lua",
-                "jsdoc", "bash"
+                "jsdoc", "bash", "gitcommit"
             },
 
             -- Install parsers synchronously (only applied to `ensure_installed`)

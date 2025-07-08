@@ -56,6 +56,13 @@ autocmd("FileType", {
     end
 })
 
+autocmd("FileType", {
+    pattern = { "dosbatch", "ps1" },
+    callback = function()
+        vim.bo.fileformat = "dos"
+    end
+})
+
 -- Restart TS
 usercmd("TSRestart", function()
     local bufnr = vim.api.nvim_get_current_buf()
