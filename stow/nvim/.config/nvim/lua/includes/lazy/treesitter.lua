@@ -4,9 +4,11 @@ return {
     config = function()
         require("nvim-treesitter.configs").setup({
             -- A list of parser names, or "all"
+            -- "gitcommit" was added due to false-positive internal logic
+            -- that tries to install "tree-sitter-gitcommit" which does not exist.
             ensure_installed = {
                 "vimdoc", "javascript", "c", "lua",
-                "jsdoc", "bash"
+                "jsdoc", "bash", "gitcommit"
             },
 
             -- Install parsers synchronously (only applied to `ensure_installed`)
@@ -31,11 +33,12 @@ return {
 
                     -- Some files in linux kernel sources exceed the 100KB limit
                     -- Because of that the limit was increased up to 250KB
-                    local max_filesize = 250 * 1024 -- 250KB
+                    -- UPD. Increased to 1MB.
+                    local max_filesize = 1000 * 1024  -- 1MB
                     local ok, stats = pcall(vim.loop.fs_stat, vim.api.nvim_buf_get_name(buf))
                     if ok and stats and stats.size > max_filesize then
                         vim.notify(
-                            "File larger than 100KB treesitter disabled for perfomance",
+                            "File larger than 1MB treesitter disabled for perfomance",
                             vim.log.levels.WARN,
                             { title = "Treesitter" }
                         )

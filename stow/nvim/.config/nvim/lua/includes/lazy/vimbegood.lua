@@ -2,7 +2,7 @@ return {
     "theprimeagen/vim-be-good",
 
     dependencies = {
-        "nvim-lua/plenary.nvim"
+        "shikorido/plenary.nvim"
     },
 
     config = function()

@@ -58,6 +58,75 @@ return {
                 --    vim.g.zig_fmt_parse_errors = 0
                 --    vim.g.zig_fmt_autosave = 0
                 --end,
+
+                -- lua-language-server config
+                --lua_ls = function()
+                --    local lspconfig = require("lspconfig")
+                --    lspconfig.lua_ls.setup({
+                --        capabilities = capabilities,
+                --        -- Command and arguments to start the server.
+                --        --cmd = { "lua-language-server" },
+                --        -- Filetypes to automatically attach to.
+                --        --filetypes = { "lua" },
+                --        -- Sets the "root directory" to the parent directory of the file in the
+                --        -- current buffer that contains either ".luarc.json" or a
+                --        -- ".luarc.jsonc" file, otherwise .git folder location will serve as root dir marker.
+                --        -- Files that share a root directory will reuse
+                --        -- the connection to the same LSP server.
+                --        --root_markers = { ".luarc.json", ".luarc.jsonc", ".luacheckrc", ".stylua.toml", "stylua.toml", "selene.toml", "selene.yml", ".git" },
+                --        -- Specific settings to send to the server. The schema for this is
+                --        -- defined by the server. For example the schema for lua-language-server
+                --        -- can be found here
+                --        -- https://raw.githubusercontent.com/LuaLS/vscode-lua/master/settings/schema.json
+                --        settings = {
+                --            Lua = {
+                --                runtime = { version = "Lua 5.1" },
+                --                diagnostics = {
+                --                    globals = { "bit", "vim", "it", "describe", "before_each", "after_each" }
+                --                }
+                --            }
+                --        }
+                --    })
+                --end,
+
+                -- pylsp config
+                --pylsp = function()
+                --    local lspconfig = require("lspconfig")
+                --    lspconfig.pylsp.setup({
+                --        capabilities = capabilities,
+                --        --cmd = { "pylsp" },
+                --        --filetypes = { "python" },
+                --        --root_markers = { "pyproject.toml", "setup.py", "setup.cfg", "requirements.txt", "Pipfile", ".git" },
+                --        -- Useful links to configure pylsp
+                --        -- https://jdhao.github.io/2023/07/22/neovim-pylsp-setup/
+                --        -- https://vi.stackexchange.com/questions/39765/how-to-configure-pylsp-when-using-mason-and-mason-lspconfig-in-neovim
+                --        -- https://www.reddit.com/r/neovim/comments/tttofk/how_to_disable_annoying_pylint_warningespecially/
+                --        -- https://github.com/python-lsp/python-lsp-server
+                --        settings = {
+                --            pylsp = {
+                --                plugins = {
+                --                    pycodestyle = {
+                --                        ignore = { 'E221', 'E266', 'E501' }
+                --                    }
+                --                }
+                --            }
+                --        }
+                --    })
+                --end,
+
+                -- clangd config
+                --clangd = function()
+                --    local lspconfig = require("lspconfig")
+                --    lspconfig.clangd.setup({
+                --        capabilities = capabilities,
+                --        --cmd = { "clangd" },
+                --        -- How to specify extensions? Does separate BufEnter func is required?
+                --        --filetypes = { "c", "cpp", "h", "hpp", "objc", "objcpp", "cuda", "proto", "S", "c_shipped", "h_shipped", "S_shipped" },
+                --        --root_markers = { ".clangd", ".clang-tidy", ".clang-format", "compile_commands.json", "compile-flags.txt", "configure.ac", ".git" },
+                --        settings = {
+                --        }
+                --    })
+                --end
             }
         })
 
@@ -87,20 +156,16 @@ return {
         -- lua-language-server config
         vim.lsp.config("lua_ls", {
             capabilities = capabilities,
-
             -- Command and arguments to start the server.
             --cmd = { "lua-language-server" },
-
             -- Filetypes to automatically attach to.
             --filetypes = { "lua" },
-
             -- Sets the "root directory" to the parent directory of the file in the
             -- current buffer that contains either ".luarc.json" or a
             -- ".luarc.jsonc" file, otherwise .git folder location will serve as root dir marker.
             -- Files that share a root directory will reuse
             -- the connection to the same LSP server.
             --root_markers = { ".luarc.json", ".luarc.jsonc", ".luacheckrc", ".stylua.toml", "stylua.toml", "selene.toml", "selene.yml", ".git" },
-
             -- Specific settings to send to the server. The schema for this is
             -- defined by the server. For example the schema for lua-language-server
             -- can be found here
