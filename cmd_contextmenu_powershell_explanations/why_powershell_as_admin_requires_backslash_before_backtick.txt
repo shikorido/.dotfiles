@@ -1,0 +1,30 @@
+diffs between
+reg add "REG_PATH" /ve /d "powershell -Command Start-Process \"\\\"alacritty\\\"\" -ArgumentList '--working-directory',\"\\\"`\\\"%%V.`\\\"\\\"\" -Verb RunAs"
+and
+reg add "REG_PATH" /ve /d "powershell -Command Start-Process \"\\\"powershell\\\"\" -ArgumentList '-noexit','-command','Set-Location','-literalPath',\"\\\"\`\\\"%%1\`\\\"\\\"\" -Verb RunAs"
+
+1. In registry.
+powershell -Command Start-Process "\"alacritty\"" -ArgumentList '--working-directory',"\"`\"path with '.`\"\"" -Verb RunAs
+
+powershell -Command Start-Process "\"powershell\"" -ArgumentList '-noexit','-command','Set-Location','-literalPath',"\"\`\"path with '.\`\"\"" -Verb RunAs
+
+2. Invocation.
+2.1. WinAPI CreateProcess pass from context menu click.
+powershell -Command Start-Process "alacritty" -ArgumentList '--working-directory',"`"path with '.`"" -Verb RunAs
+
+powershell -Command Start-Process "powershell" -ArgumentList '-noexit','-command','Set-Location','-literalPath',"\`"path with '.\`"" -Verb RunAs
+
+2.2. PowerShell's pass before WinAPI's CreateProcess for Start-Process (WS = word start, WE = word end).
+WSalacrittyWE WS--working-directoryWE WS"path with '."WE WS-VerbWE WSRunAsWE
+
+WSpowershellWE WS-noexitWE WS-commandWE WSSet-LocationWE WS-literalPathWE WS\"path with '.\"WE WS-VerbWE WSRunAsWE
+
+2.3. The final CreateProcess call.
+WSalacrittyWE WS--working-directoryWE WSpath with '.WE WS-VerbWE WSRunAsWE
+
+WSpowershellWE WS-noexitWE WS-commandWE WSSet-LocationWE WS-literalPathWE WS"path with '."WE WS-VerbWE WSRunAsWE
+
+
+
+Reminder for me:
+PS> Get-Help About_Quoting_Rules
