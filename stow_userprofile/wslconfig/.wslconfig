@@ -1,0 +1,12 @@
+[wsl2]
+swapFile=D:\\linuxswap
+memory=12884901888
+vmIdleTimeout=3600000
+defaultVhdSize=274877906944
+swap=0
+autoProxy=false
+dnsProxy=false
+dnsTunneling=false
+guiApplications=false
+[experimental]
+autoMemoryReclaim=Gradual
