@@ -1,0 +1,43 @@
+#https://alacritty.org/config-alacritty.html
+
+[general]
+working_directory = "C:\\msys64\\home\\Kirill"
+live_config_reload = true
+
+[window]
+decorations = "Full" # "None"  # "Full"
+opacity = 0.93
+startup_mode = "Maximized"  # "Windowed"
+
+[mouse]
+hide_when_typing = true
+
+[keyboard]
+bindings = [
+{ key   = "Back", mods  = "Control", chars = "\u0017" } # Ctrl+w alias to Ctrl+Backspace
+]
+
+[colors.normal]
+#blue = "#69b9f6"
+
+[font]
+#normal = { family = "Fira Code", style = "Regular" } #def=Consolar Regular
+normal = { family = "JetBrainsMono Nerd Font", style = "Regular" } #def=Consolas Regular
+size = 11.25 #def=11.25
+builtin_box_drawing = true #def=true
+offset = { x = 1, y = 0 }
+#glyph_offset = { x = 0, y = 0 }
+
+[terminal]
+# Will run MINGW64 without using msys2_shell.cmd
+shell = { program = "C:\\msys64\\usr\\bin\\env.exe", args = ["LANG=en_US.UTF-8", "LC_ALL=en_US.UTF-8", "TERM=xterm-256color", "COLORTERM=truecolor", "MSYSTEM=MINGW64", "MSYS=winsymlinks:native", "MSYS2_PATH_TYPE=inherit", "CHERE_INVOKING=1", "C:\\msys64\\usr\\bin\\zsh.exe", "--login", "-i"] }
+#shell = { program = "C:\\msys64\\usr\\bin\\env.exe", args = ["LANG=en_US.UTF-8", "LC_ALL=en_US.UTF-8", "TERM=xterm-256color", "COLORTERM=truecolor", "MSYSTEM=MINGW64", "MSYS=winsymlinks:nativestrict", "MSYS2_PATH_TYPE=inherit", "CHERE_INVOKING=1", "C:\\msys64\\usr\\bin\\zsh.exe", "--login", "-i"] }
+
+# Using msys2_shell.cmd to run specified env
+#shell = { program = "C:\\msys64\\msys2_shell.cmd", args = ["-defterm", "-no-start", "-mingw64"] }
+
+# Wont work because of alacritty cant wait and immediately closes (strange)
+#shell = { program = "C:\\msys64\\usr\\bin\\bash.exe", args = ["--login", "-c", "MSYSTEM=MINGW64 /usr/bin/bash -l"] }
+
+# Runs MSYS env by default
+#shell = { program = "C:\\msys64\\usr\\bin\\bash.exe", args = ["--login", "-i"] }
