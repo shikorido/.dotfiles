@@ -1,0 +1,188 @@
+"vim.keymap.set\(\{(.+?)", "(.+?)", (?:"|\[{2}(?="))(.+?)(?:"|\]{2})\)
+
+
+"Set part
+set number
+set relativenumber
+
+set tabstop=4
+set softtabstop=4
+set shiftwidth=4
+set expandtab=true
+
+set autoindent=true
+"set smartindent=true
+set wrap=true
+
+set hlsearch=false
+set incsearch=true
+
+set scrolloff=8
+
+set ignorecase=true
+set smartcase=true
+
+set cursorline=true
+
+
+
+
+"Remap part
+let mapleader="\<space>"
+
+"Unbind select mode gh
+nnoremap gh <Nop>
+
+"Toggle tabs and spaces
+nnoremap <leader>tt :vsc Edit.ViewWhiteSpace<CR>
+
+"Making indenting and deindenting with single > and <
+nnoremap < <<
+nnoremap > >>
+
+"Leverage View.NavigateBackward and View.NavigateFoward to make jump history more deterministic.
+nnoremap <C-o> :vsc View.NavigateBackward<CR>
+nnoremap <C-i> :vsc View.NavigateForward<CR>
+
+"Binded globally in vs with <C-H>/<C-L>
+"Window.PreviousTab and Window.NextTab
+"nnoremap H gT
+"nnoremap L gt
+
+nnoremap Y y$
+nnoremap J mzJ`z
+nnoremap <C-d> <C-d>zz
+nnoremap <C-u> <C-u>zz
+nnoremap n nzz
+nnoremap N Nzz
+
+"Insert new line before
+nnoremap <leader>O mzO<Esc>`z
+"Insert new line after
+nnoremap <leader>o mzo<Esc>`z
+
+nnoremap \ `
+nnoremap \\ `'
+nnoremap m\ <Nop>
+nnoremap m` <Nop>
+nnoremap m' <Nop>
+
+"The problem is that visual studio automatically switches vim from visual line to visual.
+"vnoremap J :vsc Edit.MoveSelectedLinesDown<CR>kV:vsc Edit.FormatSelection<CR>k
+"vnoremap K :vsc Edit.MoveSelectedLinesUp<CR>kV<:vsc Edit.FormatSelection<CR>k
+"Also line movement swaps mark position thats why I use the double down and double up movements and marks.
+vnoremap J <Esc>'<kmz'>jjmx:'<,'>m '>+1<CR>'zjjV'xk=gv
+vnoremap K <Esc>'<kkmz'>jmx:'<,'>m '<-2<CR>'zjV'xkk=gv
+
+"greatest remap ever
+xnoremap <leader>p "_dP
+
+"next greatest remap ever : asbjornHaland
+nnoremap <leader>y "+y
+vnoremap <leader>y "+y
+"It has really strange behavior that yanks whole line
+"So it can be remaped recursive or just [["+yg$]]
+"https://neovim.io/doc/user/lua-guide.html
+"vim.keymap.set("n", "<leader>Y", [["+Y]], { remap = true })
+"Visual studio vim incorrectly handles g$ not copying last char
+nnoremap <leader>Y "+y$
+nnoremap <leader>P "+P
+
+nnoremap <leader>d "_d
+vnoremap <leader>d "_d
+
+"Temporary remap from horrible capital U that will behave like lower u
+nnoremap U u
+
+"Affects on visual block inserting (mb neovim fixes it, but vim not)
+inoremap <C-c> <Esc>
+
+nnoremap Q <Nop>
+nnoremap <leader>f :vsc Edit.FormatDocument<CR>
+
+"nnoremap <C-k> <cmd>cnext<CR>zz
+"nnoremap <C-j> <cmd>cprev<CR>zz
+"nnoremap <leader>k <cmd>lnext<CR>zz
+"nnoremap <leader>j <cmd>lprev<CR>zz
+
+nnoremap <leader>s :%s/\<<C-r><C-w>\>/<C-r><C-w>/gI<Left><Left><Left>
+
+"Rust
+"vim.keymap.set(
+""n",
+""<leader>ee",
+""oif err != nil {<CR>}<Esc>Oreturn err<Esc>"
+")
+
+"In plans:
+"binds for lsp (definition, declaration, hover(if possible)
+"				references, renaming, etc.)
+"bind for compiling
+"bind for compiling+run
+"bind for run
+"maximize window size (opposite for C-W =)
+"append here with new ideas
+
+nnoremap <leader>rr :vsc Debug.StartWithoutDebugging<CR>
+nnoremap <leader>rd :vsc Debug.Start<CR>
+nnoremap <leader>gtd :vsc Debug.GoToDisassembly<CR>
+nnoremap <leader>tb :vsc Debug.ToggleBreakpoint<CR>
+nnoremap <leader>si :vsc Debug.StepInto<CR>
+nnoremap <leader>so :vsc Debug.StepOut<CR>
+nnoremap <leader>st :vsc Debug.StepOver<CR>
+nnoremap <leader>ds :vsc Debug.StopDebugging<CR>
+nnoremap <leader>dc :vsc Debug.Start<CR>
+
+
+"Comment/uncomment line/lines
+"Edit.ToggleComment command includes in extension ToggleComment
+"Visual Studio has Edit.ToggleLineComment, but it doesn't work with XAML
+nnoremap <leader>kj :vsc Edit.ToggleComment<CR>
+vnoremap <leader>kj :vsc Edit.ToggleComment<CR>
+nnoremap <leader>jk :vsc Edit.ToggleComment<CR>
+vnoremap <leader>jk :vsc Edit.ToggleComment<CR>
+
+
+let g:home  = $USERPROFILE
+let g:vsvimrc = g:home . '\_vsvimrc'
+nnoremap <leader>vpp :execute ':vsc File.OpenFile ' . g:vsvimrc<CR>
+" Now I am using nvim in msys2 environment and can't imagine whether it is possible
+" to run nvim with all the plugins I have in windows environment...
+"nnoremap <leader>vpd :!explorer '%LOCALAPPDATA%\nvim'<CR>
+
+"This doesn't work with intellisense, it has no convenient keybindigs at all...
+"inoremap <C-p> <Up>
+"inoremap <C-n> <Down>
+"UPD. https://stackoverflow.com/questions/17979779/use-c-n-c-p-in-vsvim-to-select-completion-candidate-in-intellisense-popup#28800200
+inoremap <C-p> <C-o>:vsc Edit.LineUp<CR>
+inoremap <C-n> <C-o>:vsc Edit.LineDown<CR>
+inoremap <C-y> <Tab>
+inoremap <C-Space> <C-o>:vsc Edit.CompleteWord<CR>
+"What the hell is this?
+"inoremap <C-p> <C-o>:vsc Edit.PreviousSuggestion<CR>
+"inoremap <C-n> <C-o>:vsc Edit.NextSuggestion<CR>
+"IntelliCode != IntelliSense
+"inoremap <C-p> <C-o>:vsc OtherContextMenus.SuggestionList.Edit.IntelliCode.Previous<CR>
+"inoremap <C-n> <C-o>:vsc OtherContextMenus.SuggestionList.Edit.IntelliCode.Next<CR>
+"inoremap <C-y> <C-o>:vsc OtherContextMenus.SuggestionList.Edit.IntelliCode.Apply<CR>
+"inoremap <C-n> <C-o>:vsc Edit.Edit.IntelliCode.Next<CR>
+"inoremap <C-y> <C-o>:vsc Edit.Edit.IntelliCode.Apply<CR>
+
+nnoremap <C-k> :vsc View.PreviousError<CR>zz
+nnoremap <C-j> :vsc View.NextError<CR>zz
+
+nnoremap <leader>ps :vsc Edit.FindinFiles<CR>
+nnoremap <leader>pf :vsc Window.QuickLaunch<CR>
+
+nnoremap K :vsc Edit.QuickInfo<CR>
+nnoremap <leader>vrr :vsc Edit.FindAllReferences<CR>
+nnoremap <leader>vrn :vsc Refactor.Rename<CR>
+nnoremap gd :vsc Edit.GoToDefinition<CR><Esc>
+nnoremap gp :vsc Edit.PeekDefinition<CR>
+
+nnoremap <C-W>L :vsc Window.MovetoNextTabGroup<CR>
+nnoremap <C-W>H :vsc Window.MovetoPreviousTabGroup<CR>
+
+"Wanted to move window to new tab but then new split must be created
+"Should check visual studio commands to make it better
+"nnoremap <C-W>L <C-V>
