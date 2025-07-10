@@ -1,0 +1,36 @@
+[diff "astextplain"]
+	textconv = astextplain
+[filter "lfs"]
+	clean = git-lfs clean -- %f
+	smudge = git-lfs smudge -- %f
+	process = git-lfs filter-process
+	required = true
+[http]
+	sslBackend = schannel
+#	sslBackend = openssl
+#	sslCAInfo = C:/Program Files/Git/mingw64/etc/ssl/certs/ca-bundle.crt
+[core]
+	autocrlf = true
+	eol = lf
+	fscache = true
+	symlinks = true
+	# For me git for windows is a joke actually.
+	# It has no sense outside vs/vscode (maybe for different stuff but not for code).
+	#editor = D:/ProgramsPortable/Notepad++/notepad++.exe
+[pull]
+	rebase = false
+[init]
+	defaultBranch = master
+[color]
+	ui = true
+[alias]
+	st = status
+	co = checkout
+	ci = commit
+	br = branch
+	lg = log --oneline --graph --decorate
+	gr = log --graph --decorate
+	last = log -1 HEAD
+	unstage = reset HEAD --
+	amend = commit --amend --no-edit
+	hist = log --pretty=format:'%h %ad | %s%d [%an]' --graph --date=short
