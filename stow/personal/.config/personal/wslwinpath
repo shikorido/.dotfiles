@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+append_win_path() {
+	# I assume that windows on C: drive
+	command -v cmd.exe >/dev/null || { [ -f /mnt/c/Windows/System32/cmd.exe ] && addToPath /mnt/c/Windows/System32 || return 1; }
+	win_path=`cmd.exe /c "echo %PATH%" 2>/dev/null`
+	IFS_OLD=$IFS; IFS=';'
+	for p in `printf %s "$win_path"`; do
+		IFS=$IFS_OLD
+		# Process only fully qualified paths.
+		case $p in
+			[A-Za-z]':'*'\'*) ;;
+			*) continue
+		esac
+		letter=`printf %s "${p%%:*}" | tr '[:upper:]' '[:lower:]'`
+		remain=`printf %s "${p#*:}" | tr '\\\\' '/'`
+		addToPath "/mnt/$letter$remain"
+	done
+	IFS=$IFS_OLD; unset IFS_OLD
+	unset p letter remain
+}
+append_win_path
+
